@@ -56,7 +56,8 @@ def train_model():
     X_seq, y_seq = create_sequences(
         X,
         y.values,
-        sequence_length=10
+        # sequence_length=10
+        sequence_length=20
     )
 
     print("Shape X_seq:", X_seq.shape)
@@ -117,7 +118,8 @@ def train_model():
     # =========================
     early_stop = EarlyStopping(
         monitor="val_loss",
-        patience=2,
+        # patience=2,
+        patience=5,
         restore_best_weights=True
     )
 
@@ -128,7 +130,8 @@ def train_model():
         X_train,
         y_train,
         validation_split=0.1,
-        epochs=10,
+        # epochs=10,
+        epochs=30,
         batch_size=32,
         callbacks=[early_stop],
         verbose=1
@@ -169,7 +172,12 @@ def train_model():
     # =========================
     # SMOTE (ONLY TRAIN)
     # =========================
-    smote = SMOTE(random_state=42)
+    # smote = SMOTE(random_state=42)
+    
+    smote = SMOTE(
+    sampling_strategy=0.3,
+    random_state=42
+)
 
     X_train_hybrid, y_train = smote.fit_resample(
         X_train_hybrid,
@@ -179,15 +187,31 @@ def train_model():
     # =========================
     # XGBOOST MODEL
     # =========================
+    # xgb_model = XGBClassifier(
+    #     # n_estimators=200,
+    #     n_estimators=400,
+    #     # max_depth=6,
+    #     max_depth=8,
+    #     # learning_rate=0.05,
+    #     learning_rate=0.03,
+    #     subsample=0.8,
+    #     colsample_bytree=0.8,
+    #     # eval_metric="logloss",
+    #     eval_metric="aucpr",
+    #     random_state=42
+    # )
+    
     xgb_model = XGBClassifier(
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        eval_metric="logloss",
-        random_state=42
-    )
+    n_estimators=400,
+    max_depth=8,
+    learning_rate=0.03,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    min_child_weight=3,
+    gamma=0.1,
+    eval_metric="aucpr",
+    random_state=42
+)
 
     # =========================
     # TRAIN XGBOOST
@@ -209,7 +233,11 @@ def train_model():
     prediction_probs = xgb_model.predict_proba(
         X_test_hybrid
     )[:, 1]
-
+    
+    predictions = (
+    prediction_probs > 0.35
+).astype(int)
+    
     end_time = time.time()
 
     latency = (

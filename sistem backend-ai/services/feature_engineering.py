@@ -33,7 +33,7 @@ def create_features(df):
             df["R_emaildomain"]
         ).astype(int)
 
-    # =========================
+     # =========================
     # CARD FREQUENCY
     # =========================
     if "card1" in df.columns:
@@ -41,6 +41,30 @@ def create_features(df):
 
         df["card1_frequency"] = df["card1"].map(
             card_freq
+        )
+
+    # =========================
+    # CARD AVG AMOUNT
+    # =========================
+    if (
+        "TransactionAmt" in df.columns and
+        "card1" in df.columns
+    ):
+        df["card1_amt_mean"] = (
+            df.groupby("card1")["TransactionAmt"]
+            .transform("mean")
+        )
+
+    # =========================
+    # ADDRESS AVG AMOUNT
+    # =========================
+    if (
+        "TransactionAmt" in df.columns and
+        "addr1" in df.columns
+    ):
+        df["addr1_amt_mean"] = (
+            df.groupby("addr1")["TransactionAmt"]
+            .transform("mean")
         )
 
     # =========================
