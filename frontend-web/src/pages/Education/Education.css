@@ -1,0 +1,261 @@
+.education {
+  padding: 80px 10%;
+}
+
+/* ==========================================
+   Education Header
+========================================== */
+
+.education-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.education-header h1 {
+  font-size: 2.7rem;
+  margin-bottom: 15px;
+  color: var(--text);
+}
+
+.education-header p {
+  max-width: 750px;
+  margin: auto;
+  color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   Education Section
+========================================== */
+
+.education-section {
+  margin-bottom: 70px;
+}
+
+.education-section h2 {
+  text-align: center;
+  margin-bottom: 35px;
+  color: var(--text);
+}
+
+
+/* ==========================================
+   Information Card
+========================================== */
+
+.info-card {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  padding: 35px;
+
+  box-shadow: var(--shadow);
+
+  text-align: center;
+}
+
+.info-card p {
+  color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   Types & Advantages
+========================================== */
+
+.type-grid,
+.advantage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.type-card,
+.advantage-card {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  padding: 30px;
+
+  box-shadow: var(--shadow);
+
+  transition: var(--transition);
+}
+
+.type-card:hover,
+.advantage-card:hover {
+  transform: translateY(-4px);
+}
+
+.type-card h3,
+.advantage-card h3 {
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.type-card p,
+.advantage-card p {
+  color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   AI Workflow
+========================================== */
+
+.workflow-ai {
+  display: flex;
+  flex-wrap: wrap;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 15px;
+}
+
+.step {
+  background: var(--primary);
+  color: white;
+
+  padding: 14px 22px;
+
+  border-radius: 10px;
+
+  font-weight: 600;
+}
+
+.workflow-ai span {
+  font-size: 1.5rem;
+  font-weight: bold;
+
+  color: var(--primary);
+}
+
+
+/* ==========================================
+   FAQ
+========================================== */
+
+.faq-card {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  padding: 25px;
+
+  box-shadow: var(--shadow);
+
+  margin-bottom: 20px;
+}
+
+.faq-card h3 {
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.faq-card p {
+  color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   Responsive
+========================================== */
+
+/* Tablet */
+
+@media (max-width: 900px) {
+
+  .education {
+    padding: 60px 8%;
+  }
+
+}
+
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .education {
+    padding: 50px 8%;
+  }
+
+  .education-header {
+    margin-bottom: 45px;
+  }
+
+  .education-header h1 {
+    font-size: 2.2rem;
+  }
+
+  .education-header p {
+    font-size: 15px;
+  }
+
+  .education-section {
+    margin-bottom: 55px;
+  }
+
+  .info-card,
+  .type-card,
+  .advantage-card,
+  .faq-card {
+    padding: 25px;
+  }
+
+}
+
+
+/* Small Mobile */
+
+@media (max-width: 480px) {
+
+  .education {
+    padding: 40px 6%;
+  }
+
+  .education-header h1 {
+    font-size: 1.9rem;
+  }
+
+  .education-header p {
+    font-size: 14px;
+  }
+
+  .education-section {
+    margin-bottom: 45px;
+  }
+
+  .education-section h2 {
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+  }
+
+  .info-card,
+  .type-card,
+  .advantage-card,
+  .faq-card {
+    padding: 20px;
+  }
+
+  .step {
+    width: 100%;
+    text-align: center;
+    padding: 12px 18px;
+  }
+
+  .workflow-ai {
+    gap: 10px;
+  }
+
+  .workflow-ai span {
+    font-size: 1.2rem;
+  }
+
+}
