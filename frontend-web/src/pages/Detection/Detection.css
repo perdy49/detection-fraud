@@ -8,7 +8,7 @@
 
 .detection-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
 }
 
 .detection-header h1 {
@@ -21,8 +21,56 @@
   color: var(--text-secondary);
   max-width: 700px;
   margin: auto;
+  line-height: 1.7;
 }
 
+/* ==========================================
+   Detection Mode
+========================================== */
+
+.detection-mode {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+
+  width: fit-content;
+  margin: 0 auto 40px;
+
+  padding: 5px;
+
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  box-shadow: var(--shadow);
+}
+
+.mode-btn {
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--text-secondary);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.mode-btn:hover {
+  color: var(--text);
+  background: var(--background);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  color: white;
+}
 
 /* ==========================================
    Detection Container
@@ -31,9 +79,11 @@
 .detection-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
-}
 
+  gap: 40px;
+
+  align-items: start;
+}
 
 /* ==========================================
    Form & Prediction Panel
@@ -54,9 +104,10 @@
 .detection-form h2,
 .prediction-panel h2 {
   color: var(--text);
+
+  margin-top: 0;
   margin-bottom: 25px;
 }
-
 
 /* ==========================================
    Form
@@ -68,6 +119,7 @@
 
 .form-group label {
   display: block;
+
   margin-bottom: 8px;
 
   color: var(--text);
@@ -79,6 +131,8 @@
 .form-group select {
   width: 100%;
 
+  box-sizing: border-box;
+
   padding: 14px;
 
   border: 1px solid var(--border);
@@ -88,6 +142,8 @@
   color: var(--text);
 
   outline: none;
+
+  font-size: 15px;
 
   transition: var(--transition);
 }
@@ -99,8 +155,96 @@
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--primary);
+
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+/* ==========================================
+   Transaction Time
+========================================== */
+
+.form-group input[readonly] {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.form-group input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+/* ==========================================
+   Analyze Button
+========================================== */
+
+.detection .primary-btn {
+  width: 100%;
+
+  margin-top: 5px;
+
+  padding: 14px 20px;
+
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+
+  background: var(--primary);
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.detection .primary-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.detection .primary-btn:active {
+  transform: translateY(0);
+}
+
+.detection .primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================
+   Empty Result
+========================================== */
+
+.empty-result {
+  min-height: 260px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+
+  text-align: center;
+}
+
+.empty-result p {
+  max-width: 420px;
+
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  line-height: 1.7;
+}
+
+.empty-result strong {
+  color: var(--text);
+}
 
 /* ==========================================
    Prediction Result
@@ -118,14 +262,19 @@
 }
 
 .result-card h3 {
-  color: var(--text);
+  margin-top: 0;
   margin-bottom: 8px;
+
+  color: var(--text);
 }
 
 .result-card p {
-  color: var(--text-secondary);
-}
+  margin-bottom: 0;
 
+  color: var(--text-secondary);
+
+  line-height: 1.7;
+}
 
 /* ==========================================
    Safe Status
@@ -141,14 +290,34 @@
   border-radius: 30px;
 
   background: rgba(34, 197, 94, 0.15);
+
   color: var(--success);
 
   font-weight: 600;
 }
 
+/* ==========================================
+   Danger Status
+========================================== */
+
+.danger-status {
+  display: inline-block;
+
+  margin-top: 10px;
+
+  padding: 8px 18px;
+
+  border-radius: 30px;
+
+  background: rgba(239, 68, 68, 0.15);
+
+  color: #ef4444;
+
+  font-weight: 600;
+}
 
 /* ==========================================
-   Progress
+   Probability Progress
 ========================================== */
 
 .progress {
@@ -167,18 +336,34 @@
 .progress-fill {
   height: 100%;
 
-  background: var(--success);
+  border-radius: inherit;
 
-  transition: width 0.3s ease;
+  transition:
+    width 0.4s ease,
+    background 0.3s ease;
 }
 
-/* result
+/* Safe probability */
+
+.progress-fill.safe {
+  background: var(--success);
+}
+
+/* Dangerous probability */
+
+.progress-fill.danger {
+  background: #ef4444;
+}
+
+/* ==========================================
    Result Actions
 ========================================== */
 
 .result-actions {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
+
   gap: 15px;
 
   margin-top: 25px;
@@ -186,6 +371,7 @@
 
 .result-actions button {
   width: 100%;
+
   padding: 13px 18px;
 
   border-radius: 10px;
@@ -198,8 +384,9 @@
   transition: var(--transition);
 }
 
-
-/* Hapus Hasil */
+/* ==========================================
+   Clear Results
+========================================== */
 
 .delete-result-btn {
   background: rgba(239, 68, 68, 0.1);
@@ -217,8 +404,9 @@
   transform: translateY(-1px);
 }
 
-
-/* Simpan ke Riwayat */
+/* ==========================================
+   Save To History
+========================================== */
 
 .save-result-btn {
   background: var(--primary);
@@ -235,13 +423,426 @@
 }
 
 /* ==========================================
+   Upload Container
+========================================== */
+
+.upload-container {
+  max-width: 1000px;
+
+  margin: 0 auto;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  padding: 35px;
+
+  box-shadow: var(--shadow);
+}
+
+.upload-header {
+  margin-bottom: 30px;
+}
+
+.upload-header h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+
+  color: var(--text);
+}
+
+.upload-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  line-height: 1.7;
+}
+
+/* ==========================================
+   CSV Template Card
+========================================== */
+
+.csv-template-card {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  padding: 22px;
+
+  margin-bottom: 25px;
+
+  background: var(--background);
+
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+}
+
+.csv-template-card h3 {
+  margin: 0 0 7px;
+
+  color: var(--text);
+}
+
+.csv-template-card p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  line-height: 1.6;
+}
+
+/* ==========================================
+   Secondary Button
+========================================== */
+
+.detection .secondary-btn {
+  flex-shrink: 0;
+
+  padding: 12px 18px;
+
+  border: 1px solid var(--primary);
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: var(--primary);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.detection .secondary-btn:hover {
+  background: var(--primary);
+  color: white;
+
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   CSV Upload Area
+========================================== */
+
+.csv-upload-area {
+  min-height: 280px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 35px;
+
+  border: 2px dashed var(--border);
+
+  border-radius: 14px;
+
+  background: var(--background);
+
+  text-align: center;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.csv-upload-area:hover {
+  border-color: var(--primary);
+
+  background: rgba(59, 130, 246, 0.03);
+}
+
+.csv-upload-area.dragging {
+  border-color: var(--primary);
+
+  background: rgba(59, 130, 246, 0.08);
+
+  transform: scale(1.01);
+}
+
+.upload-icon {
+  width: 55px;
+  height: 55px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 18px;
+
+  border-radius: 50%;
+
+  background: rgba(59, 130, 246, 0.1);
+
+  color: var(--primary);
+
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.csv-upload-area h3 {
+  margin: 0 0 8px;
+
+  color: var(--text);
+
+  font-size: 18px;
+}
+
+.csv-upload-area p {
+  margin: 0 0 10px;
+
+  color: var(--text-secondary);
+
+  line-height: 1.6;
+}
+
+.csv-upload-area > span {
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+/* ==========================================
+   Uploaded File Card
+========================================== */
+
+.uploaded-file-card {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px;
+
+  margin-bottom: 25px;
+
+  background: var(--background);
+
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+}
+
+.uploaded-file-info {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  min-width: 0;
+}
+
+.file-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  color: var(--success);
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.uploaded-file-info h3 {
+  margin: 0 0 5px;
+
+  color: var(--text);
+
+  font-size: 15px;
+
+  word-break: break-word;
+}
+
+.uploaded-file-info p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.remove-file-btn {
+  flex-shrink: 0;
+
+  padding: 9px 14px;
+
+  border: 1px solid #ef4444;
+
+  border-radius: 8px;
+
+  background: rgba(239, 68, 68, 0.08);
+
+  color: #ef4444;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.remove-file-btn:hover {
+  background: #ef4444;
+
+  color: white;
+
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   CSV Preview
+========================================== */
+
+.csv-preview {
+  margin-bottom: 25px;
+
+  background: var(--background);
+
+  border: 1px solid var(--border);
+
+  border-radius: 12px;
+
+  overflow: hidden;
+}
+
+.csv-preview-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.csv-preview-header h3 {
+  margin: 0 0 5px;
+
+  color: var(--text);
+}
+
+.csv-preview-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.csv-preview-header > span {
+  flex-shrink: 0;
+
+  padding: 7px 12px;
+
+  border-radius: 20px;
+
+  background: rgba(59, 130, 246, 0.1);
+
+  color: var(--primary);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+/* ==========================================
+   CSV Table
+========================================== */
+
+.csv-table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+}
+
+.csv-table-wrapper table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  min-width: 650px;
+}
+
+.csv-table-wrapper th,
+.csv-table-wrapper td {
+  padding: 13px 15px;
+
+  border-bottom: 1px solid var(--border);
+
+  text-align: left;
+
+  white-space: nowrap;
+
+  font-size: 13px;
+}
+
+.csv-table-wrapper th {
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-weight: 600;
+}
+
+.csv-table-wrapper td {
+  color: var(--text-secondary);
+}
+
+.csv-table-wrapper tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.csv-table-wrapper tbody tr:hover {
+  background: rgba(59, 130, 246, 0.03);
+}
+
+/* ==========================================
+   Upload Analyze Button
+========================================== */
+
+.upload-analyze-btn {
+  margin-top: 0;
+}
+
+/* ==========================================
    Responsive
 ========================================== */
 
 /* Tablet */
 
 @media (max-width: 900px) {
-
   .detection {
     padding: 60px 8%;
   }
@@ -250,19 +851,20 @@
     grid-template-columns: 1fr;
   }
 
+  .upload-container {
+    padding: 30px;
+  }
 }
-
 
 /* Mobile */
 
 @media (max-width: 768px) {
-
   .detection {
     padding: 50px 8%;
   }
 
   .detection-header {
-    margin-bottom: 40px;
+    margin-bottom: 35px;
   }
 
   .detection-header h1 {
@@ -274,7 +876,8 @@
   }
 
   .detection-form,
-  .prediction-panel {
+  .prediction-panel,
+  .upload-container {
     padding: 28px;
   }
 
@@ -283,13 +886,56 @@
     padding: 13px;
   }
 
-}
+  .detection-mode {
+    width: 100%;
 
+    box-sizing: border-box;
+  }
+
+  .mode-btn {
+    flex: 1;
+
+    padding: 11px 12px;
+
+    font-size: 13px;
+  }
+
+  .csv-template-card {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .secondary-btn {
+    width: 100%;
+  }
+
+  .csv-upload-area {
+    min-height: 240px;
+
+    padding: 25px;
+  }
+
+  .uploaded-file-card {
+    align-items: flex-start;
+  }
+
+  .uploaded-file-info {
+    min-width: 0;
+  }
+
+  .remove-file-btn {
+    margin-top: 2px;
+  }
+
+  .csv-preview-header {
+    align-items: flex-start;
+  }
+}
 
 /* Small Mobile */
 
 @media (max-width: 480px) {
-
   .detection {
     padding: 40px 6%;
   }
@@ -303,17 +949,72 @@
   }
 
   .detection-form,
-  .prediction-panel {
+  .prediction-panel,
+  .upload-container {
     padding: 22px;
+  }
+
+  .detection-mode {
+    gap: 5px;
+
+    padding: 4px;
+  }
+
+  .mode-btn {
+    padding: 10px 8px;
+
+    font-size: 12px;
   }
 
   .result-card {
     padding: 18px;
   }
 
-  .result-actions {
-  grid-template-columns: 1fr;
-  gap: 10px;
-}
+  .empty-result {
+    min-height: 200px;
 
+    padding: 20px;
+  }
+
+  .result-actions {
+    grid-template-columns: 1fr;
+
+    gap: 10px;
+  }
+
+  .csv-template-card {
+    padding: 18px;
+  }
+
+  .csv-upload-area {
+    min-height: 210px;
+
+    padding: 20px;
+  }
+
+  .csv-upload-area h3 {
+    font-size: 16px;
+  }
+
+  .csv-upload-area p {
+    font-size: 13px;
+  }
+
+  .uploaded-file-card {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .remove-file-btn {
+    width: 100%;
+  }
+
+  .csv-preview-header {
+    flex-direction: column;
+  }
+
+  .csv-preview-header > span {
+    align-self: flex-start;
+  }
 }
