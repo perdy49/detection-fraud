@@ -7,3 +7,11 @@ class TransactionSchema(BaseModel):
         ...,
         description="Daftar fitur transaksi hasil preprocessing"
     )
+
+
+class SingleTransactionSchema(BaseModel):
+    amount: float = Field(..., gt=0)
+    product_code: str
+    card_type: str
+    email: str
+    transaction_time: str

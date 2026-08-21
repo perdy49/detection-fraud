@@ -1,7 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
-from schemas.transaction_schema import TransactionSchema
-from services.predict import predict_transaction
+from routers.transaction_router import router as transaction_router
 
 
 app = FastAPI(
@@ -11,28 +10,11 @@ app = FastAPI(
 )
 
 
+app.include_router(transaction_router)
+
+
 @app.get("/")
 def home():
     return {
         "message": "Fraud Detection API Running"
     }
-
-
-@app.post("/predict")
-def predict(data: TransactionSchema):
-
-    try:
-        score = predict_transaction(
-            data.features
-        )
-
-        return {
-            "fraud_score": score,
-            "status": "FRAUD" if score > 0.5 else "SAFE"
-        }
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )

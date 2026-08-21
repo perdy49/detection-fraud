@@ -16,14 +16,14 @@ scaler = joblib.load(
 )
 
 lstm_model = load_model(
-    "model/lstm_model.h5"
+    "model/lstm_model.keras"
 )
 
 
 # =========================
 # SEQUENCE BUFFER
 # =========================
-sequence_buffer = deque(maxlen=10)
+sequence_buffer = deque(maxlen=20)
 
 
 def predict_transaction(data: list):
@@ -62,7 +62,7 @@ def predict_transaction(data: list):
     # =========================
     sequence = list(sequence_buffer)
 
-    while len(sequence) < 10:
+    while len(sequence) < 20:
         sequence.insert(
             0,
             np.zeros_like(data_scaled)
@@ -71,7 +71,7 @@ def predict_transaction(data: list):
     sequence = np.array(
         sequence,
         dtype=np.float32
-    ).reshape(1, 10, -1)
+    ).reshape(1, 20, -1)
 
     # =========================
     # LSTM FEATURE

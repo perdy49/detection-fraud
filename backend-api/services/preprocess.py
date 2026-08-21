@@ -132,3 +132,67 @@ def preprocess_data(
         X_scaled = scaler.transform(X)
 
     return X_scaled, y, scaler, feature_names
+
+
+def preprocess_for_prediction(df):
+    """
+    Preprocess transaction data for inference.
+    Tidak melakukan training atau fit scaler baru.
+    """
+
+    # Feature engineering
+    df = create_features(df)
+
+    # Hapus ID
+    if "TransactionID" in df.columns:
+        df = df.drop(columns=["TransactionID"])
+
+    # Load feature names dari model
+    feature_names = joblib.load(
+        "model/feature_names.pkl"
+    )
+
+    # Tambahkan kolom yang tidak ada
+    for feature in feature_names:
+        if feature not in df.columns:
+            df[feature] = 0
+
+    # Buang kolom yang tidak digunakan model
+    df = df[feature_names]
+
+    # Categorical encoding
+    categorical_cols = df.select_dtypes(
+        include=["object"]
+    ).columns
+
+    for col in categorical_cols:
+        df[col] = df[col].fillna("missing")
+
+        # Untuk inference sederhana:
+        df[col] = pd.factorize(
+            df[col].astype(str)
+        )[0]
+
+    # Numerical missing
+    numerical_cols = df.select_dtypes(
+        include=[np.number]
+    ).columns
+
+    for col in numerical_cols:
+        df[col] = df[col].fillna(0)
+
+    # Inf
+    df.replace(
+        [np.inf, -np.inf],
+        0,
+        inplace=True
+    )
+
+    # Load scaler yang SUDAH DILATIH
+    scaler = joblib.load(
+        "model/scaler.pkl"
+    )
+
+    X_scaled = scaler.transform(df)
+
+    return X_scaled
