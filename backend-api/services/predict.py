@@ -1,7 +1,9 @@
+import pandas as pd
 import joblib
 import numpy as np
 from collections import deque
 from tensorflow.keras.models import load_model
+from services.preprocess import preprocess_for_prediction
 
 
 # =========================
@@ -96,6 +98,87 @@ def predict_transaction(data: list):
 
     # =========================
     # XGBOOST PREDICTION
+    # =========================
+    fraud_score = xgb_model.predict_proba(
+        hybrid_input
+    )[0][1]
+
+    return float(fraud_score)
+
+def predict_single_transaction(
+    amount: float,
+    product_code: str,
+    card_type: str,
+    email: str,
+    transaction_time: str
+):
+    # =========================
+    # BUILD TRANSACTION DATA
+    # =========================
+    transaction = pd.DataFrame([
+        {
+            "TransactionDT": pd.Timestamp(transaction_time).timestamp(),
+            "TransactionAmt": amount,
+            "ProductCD": product_code,
+            "card4": card_type,
+            "P_emaildomain": email.split("@")[-1],
+            "R_emaildomain": email.split("@")[-1],
+        }
+    ])
+
+    # =========================
+    # PREPROCESS
+    # =========================
+    data_scaled = preprocess_for_prediction(
+        transaction
+    )
+
+    # =========================
+    # ADD TO BUFFER
+    # =========================
+    sequence_buffer.append(
+        data_scaled[0]
+    )
+
+    # =========================
+    # BUILD SEQUENCE
+    # =========================
+    sequence = list(sequence_buffer)
+
+    while len(sequence) < 20:
+        sequence.insert(
+            0,
+            np.zeros_like(data_scaled[0])
+        )
+
+    sequence = np.array(
+        sequence,
+        dtype=np.float32
+    ).reshape(1, 20, -1)
+
+    # =========================
+    # LSTM FEATURE
+    # =========================
+    lstm_feature = lstm_model.predict(
+        sequence,
+        verbose=0
+    )
+
+    # =========================
+    # XGBOOST INPUT
+    # =========================
+    xgb_input = sequence[:, -1, :]
+
+    # =========================
+    # HYBRID FEATURES
+    # =========================
+    hybrid_input = np.hstack((
+        xgb_input,
+        lstm_feature
+    ))
+
+    # =========================
+    # PREDICTION
     # =========================
     fraud_score = xgb_model.predict_proba(
         hybrid_input

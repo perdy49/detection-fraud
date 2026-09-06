@@ -1,0 +1,59 @@
+const API_BASE_URL = "http://127.0.0.1:8000";
+
+export interface PredictionResponse {
+  fraud_score: number;
+  status: "FRAUD" | "SAFE";
+}
+
+export interface SingleTransactionRequest {
+  amount: number;
+  product_code: string;
+  card_type: string;
+  email: string;
+  transaction_time: string;
+}
+
+export async function predictSingleTransaction(
+  data: SingleTransactionRequest
+): Promise<PredictionResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/transaction/predict-single`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(errorData?.detail || "Failed to predict transaction.");
+  }
+
+  return response.json();
+}
+
+export async function predictTransaction(
+  features: number[]
+): Promise<PredictionResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/transaction/predict`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      features
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(errorData?.detail || "Failed to predict transaction.");
+  }
+
+  return response.json();
+}

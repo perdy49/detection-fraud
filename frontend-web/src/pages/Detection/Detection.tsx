@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import "./Detection.css";
 import useLanguage from "../../hooks/useLanguage";
+import { predictSingleTransaction } from "../../services/transactionApi";
 
 interface DetectionForm {
   amount: string;
@@ -88,34 +89,43 @@ function Detection() {
    * =========================
    */
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!form.amount || !form.productCode || !form.cardType || !form.email) {
       return;
     }
 
     setIsAnalyzing(true);
+    setResult(null);
 
-    /*
-     * TEMPORARY MOCK RESULT
-     *
-     * Later:
-     *
-     * POST /api/detection/predict
-     *
-     * Result will come from XGBoost + LSTM.
-     */
-
-    setTimeout(() => {
-      const mockProbability = 12;
-
-      setResult({
-        status: mockProbability >= 50 ? "Unauthorized" : "Legitimate",
-        probability: mockProbability,
-        recommendation: getRecommendation(mockProbability)
+    try {
+      const response = await predictSingleTransaction({
+        amount: Number(form.amount),
+        product_code: form.productCode,
+        card_type: form.cardType,
+        email: form.email,
+        transaction_time: form.transactionTime
       });
 
+      const probability = response.fraud_score * 100;
+
+      setResult({
+        status: response.status === "FRAUD" ? "Unauthorized" : "Legitimate",
+
+        probability,
+
+        recommendation: getRecommendation(probability)
+      });
+    } catch (error) {
+      console.error("Prediction error:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to analyze transaction."
+      );
+    } finally {
       setIsAnalyzing(false);
-    }, 700);
+    }
   };
 
   /*

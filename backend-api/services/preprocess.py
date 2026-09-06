@@ -153,9 +153,24 @@ def preprocess_for_prediction(df):
     )
 
     # Tambahkan kolom yang tidak ada
-    for feature in feature_names:
-        if feature not in df.columns:
-            df[feature] = 0
+    missing_features = [
+        feature
+        for feature in feature_names
+        if feature not in df.columns
+    ]
+
+    if missing_features:
+        df = pd.concat(
+            [
+                df,
+                pd.DataFrame(
+                    0,
+                    index=df.index,
+                    columns=missing_features
+                )
+            ],
+            axis=1
+        )
 
     # Buang kolom yang tidak digunakan model
     df = df[feature_names]
@@ -168,7 +183,6 @@ def preprocess_for_prediction(df):
     for col in categorical_cols:
         df[col] = df[col].fillna("missing")
 
-        # Untuk inference sederhana:
         df[col] = pd.factorize(
             df[col].astype(str)
         )[0]
