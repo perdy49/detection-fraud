@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.transaction_router import router as transaction_router
+from routers.csv_router import router as csv_router
 
 
 app = FastAPI(
@@ -19,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(transaction_router)
+app.include_router(csv_router)
 
 
 @app.get("/")
