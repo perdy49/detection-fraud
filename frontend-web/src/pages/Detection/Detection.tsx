@@ -1,7 +1,13 @@
 import { useRef, useState } from "react";
 import "./Detection.css";
 import useLanguage from "../../hooks/useLanguage";
-import {\n  analyzeCsv,\n  getCsvAnalysis,\n  getCsvAnalysisDownloadUrl,\n  predictSingleTransaction,\n  type CsvAnalysisStatus\n} from "../../services/transactionApi";
+import {
+  analyzeCsv,
+  getCsvAnalysis,
+  getCsvAnalysisDownloadUrl,
+  predictSingleTransaction,
+  type CsvAnalysisStatus
+} from "../../services/transactionApi";
 
 interface DetectionForm {
   amount: string;
@@ -70,12 +76,6 @@ function Detection() {
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const [csvFile, setCsvFile] = useState<CsvFile | null>(null);
-
-  const [isDragging, setIsDragging] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const handleChange = (field: keyof DetectionForm, value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -141,7 +141,8 @@ function Detection() {
     useState<CsvAnalysisStatus["result"] | null>(null);
 
   const [csvProgress, setCsvProgress] = useState(0);
-  const [csvMessage, setCsvMessage] = useState("");\n  const [csvJobId, setCsvJobId] = useState<string | null>(null);
+  const [csvMessage, setCsvMessage] = useState("");
+  const [csvJobId, setCsvJobId] = useState<string | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -1412,20 +1413,17 @@ function Detection() {
             <h2>Upload Transaction File</h2>
 
             <p>
-              Upload a CSV file containing transaction data for multiple
-              transaction detection.
+              Upload a transaction CSV for AI analysis. Large files are
+              processed on the backend in batches so the browser stays light.
             </p>
           </div>
-
-          {/* DOWNLOAD SAMPLE */}
 
           <div className="csv-template-card">
             <div>
               <h3>CSV Template</h3>
-
               <p>
-                Not sure about the required CSV structure? Download our sample
-                template first.
+                Transaction CSV is required. Identity CSV is optional and is
+                merged using TransactionID.
               </p>
             </div>
 
@@ -1433,8 +1431,6 @@ function Detection() {
               Download CSV Sample
             </button>
           </div>
-
-          {/* UPLOAD AREA */}
 
           {!csvFile ? (
             <div
@@ -1453,25 +1449,24 @@ function Detection() {
               />
 
               <div className="upload-icon">↑</div>
-
-              <h3>Drop your CSV file here</h3>
-
+              <h3>Drop your transaction CSV here</h3>
               <p>or click to browse from your computer</p>
-
-              <span>Supported format: CSV</span>
+              <span>Large files are not loaded into browser memory</span>
             </div>
           ) : (
             <>
-              {/* FILE INFORMATION */}
-
               <div className="uploaded-file-card">
                 <div className="uploaded-file-info">
                   <div className="file-icon">CSV</div>
 
                   <div>
                     <h3>{csvFile.name}</h3>
-
-                    <p>{csvFile.totalRows} transactions detected</p>
+                    <p>
+                      {csvFile.size >= 1024 * 1024
+                        ? `${(csvFile.size / 1024 / 1024).toFixed(1)} MB`
+                        : `${(csvFile.size / 1024).toFixed(1)} KB`}
+                      {" · transaction CSV selected"}
+                    </p>
                   </div>
                 </div>
 
@@ -1480,16 +1475,41 @@ function Detection() {
                 </button>
               </div>
 
-              {/* CSV PREVIEW */}
+              <div className="csv-template-card">
+                <div>
+                  <h3>Identity CSV <span>(optional)</span></h3>
+                  <p>
+                    For IEEE-CIS data, select the matching identity CSV.
+                  </p>
+                  {identityFile && (
+                    <p>
+                      Selected: <strong>{identityFile.name}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <input
+                  ref={identityInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleIdentityChange}
+                  hidden
+                />
+
+                <button
+                  className="secondary-btn"
+                  onClick={() => identityInputRef.current?.click()}
+                >
+                  {identityFile ? "Change Identity CSV" : "Choose Identity CSV"}
+                </button>
+              </div>
 
               <div className="csv-preview">
                 <div className="csv-preview-header">
                   <div>
                     <h3>CSV Preview</h3>
-
                     <p>Showing the first {csvFile.rows.length} rows</p>
                   </div>
-
                   <span>{csvFile.headers.length} columns</span>
                 </div>
 
@@ -1518,7 +1538,92 @@ function Detection() {
                 </div>
               </div>
 
-              {/* ANALYZE */}
+              {isAnalyzing && (
+                <div className="result-card">
+                  <h3>AI Analysis Progress</h3>
+
+                  <div className="progress">
+                    <div
+                      className="progress-fill safe"
+                      style={{ width: `${csvProgress}%` }}
+                    />
+                  </div>
+
+                  <p>
+                    {csvProgress}% — {csvMessage}
+                  </p>
+                </div>
+              )}
+
+              {csvAnalysis && (
+                <>
+                  <div className="result-card">
+                    <h3>Analysis Result</h3>
+
+                    <p>
+                      Total transactions:{" "}
+                      <strong>
+                        {csvAnalysis.total_transactions.toLocaleString()}
+                      </strong>
+                    </p>
+
+                    <p>
+                      SAFE:{" "}
+                      <strong>
+                        {csvAnalysis.safe_transactions.toLocaleString()}
+                      </strong>
+                    </p>
+
+                    <p>
+                      FRAUD:{" "}
+                      <strong>
+                        {csvAnalysis.fraud_transactions.toLocaleString()}
+                      </strong>
+                    </p>
+
+                    <p>
+                      Fraud percentage:{" "}
+                      <strong>
+                        {csvAnalysis.fraud_percentage.toFixed(2)}%
+                      </strong>
+                    </p>
+
+                    <p>
+                      Average fraud score:{" "}
+                      <strong>
+                        {(csvAnalysis.average_fraud_score * 100).toFixed(2)}%
+                      </strong>
+                    </p>
+                  </div>
+
+                  <div className="result-card">
+                    <h3>Highest Risk Transactions</h3>
+
+                    {csvAnalysis.highest_risk.map((item, index) => (
+                      <p key={`${item.transaction_id}-${index}`}>
+                        #{index + 1} — Transaction{" "}
+                        <strong>{item.transaction_id}</strong> —{" "}
+                        {(item.fraud_score * 100).toFixed(2)}% —{" "}
+                        <strong>{item.status}</strong>
+                      </p>
+                    ))}
+                  </div>
+
+                  {csvJobId && (
+                    <button
+                      className="secondary-btn"
+                      onClick={() =>
+                        window.open(
+                          getCsvAnalysisDownloadUrl(csvJobId),
+                          "_blank"
+                        )
+                      }
+                    >
+                      Download Full Analysis CSV
+                    </button>
+                  )}
+                </>
+              )}
 
               <button
                 className="primary-btn upload-analyze-btn"
@@ -1527,7 +1632,9 @@ function Detection() {
               >
                 {isAnalyzing
                   ? "Analyzing Transactions..."
-                  : "Analyze Transactions"}
+                  : csvAnalysis
+                    ? "Analyze Again"
+                    : "Analyze Transactions"}
               </button>
             </>
           )}
