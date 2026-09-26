@@ -276,11 +276,30 @@ def analyze_csv(
             identity_path,
         )
 
+        required_columns = {
+            "TransactionID",
+            "TransactionDT",
+            "TransactionAmt",
+            "ProductCD",
+        }
+
+        missing_columns = required_columns.difference(
+            set(relation.columns)
+        )
+
+        if missing_columns:
+            raise ValueError(
+                "This is not a transaction CSV. Missing required "
+                f"columns: {', '.join(sorted(missing_columns))}. "
+                "Upload test_transaction.csv as the transaction file; "
+                "test_identity.csv is optional."
+            )
+
         # Count without materializing the complete CSV in Python.
         total_rows = connection.sql(
             f"""
             SELECT COUNT(*)
-            FROM ({relation.query}) AS source
+            FROM ({relation.sql_query()}) AS source
             """
         ).fetchone()[0]
 
@@ -322,9 +341,7 @@ def analyze_csv(
             ])
 
             while True:
-                raw = relation.fetch_df_chunk(
-                    max(1, BATCH_ROWS // 2048)
-                )
+                raw = relation.fetch_df_chunk(1)
 
                 if raw.empty:
                     break
