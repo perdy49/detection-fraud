@@ -1,10 +1,14 @@
 import pandas as pd
 import joblib
 import numpy as np
+
 from collections import deque
+
 from tensorflow.keras.models import load_model
 
-from services.feature_engineering import create_features
+from services.preprocess_single import (
+    preprocess_single_transaction
+)
 
 
 # =========================================================
@@ -29,71 +33,120 @@ feature_names = joblib.load(
 
 
 # =========================================================
-# SEQUENCE BUFFER
+# CSV SEQUENCE BUFFER
 # =========================================================
-
+#
 # KHUSUS CSV / FULL TRANSACTION
-# JANGAN DIGUNAKAN OLEH SINGLE TRANSACTION
+#
+# SINGLE TRANSACTION TIDAK MENGGUNAKAN BUFFER INI.
+# =========================================================
 
-csv_sequence_buffer = deque(maxlen=20)
+csv_sequence_buffer = deque(
+    maxlen=20
+)
 
 
 # =========================================================
-# CSV / FULL TRANSACTION PREDICTION
+# CSV / FULL TRANSACTION
 # =========================================================
 
-def predict_transaction(data: list):
+def predict_transaction(
+    data: list
+):
 
-    expected_features = scaler.n_features_in_
+    expected_features = (
+        scaler.n_features_in_
+    )
 
     if len(data) != expected_features:
+
         raise ValueError(
-            f"Jumlah fitur harus {expected_features}, "
+            f"Jumlah fitur harus "
+            f"{expected_features}, "
             f"tetapi dapat {len(data)}"
         )
 
     data = np.array(
         data,
         dtype=np.float32
-    ).reshape(1, -1)
+    ).reshape(
+        1,
+        -1
+    )
 
-    # Scaling CSV tetap sama
-    data_scaled = scaler.transform(data)[0]
+    # -----------------------------------------------------
+    # SCALING
+    # -----------------------------------------------------
+
+    data_scaled = scaler.transform(
+        data
+    )[0]
+
+    # -----------------------------------------------------
+    # BUFFER
+    # -----------------------------------------------------
 
     csv_sequence_buffer.append(
         data_scaled
     )
 
-    sequence = list(csv_sequence_buffer)
+    sequence = list(
+        csv_sequence_buffer
+    )
 
     while len(sequence) < 20:
+
         sequence.insert(
             0,
-            np.zeros_like(data_scaled)
+            np.zeros_like(
+                data_scaled
+            )
         )
 
     sequence = np.array(
         sequence,
         dtype=np.float32
-    ).reshape(1, 20, -1)
-
-    lstm_feature = lstm_model.predict(
-        sequence,
-        verbose=0
+    ).reshape(
+        1,
+        20,
+        -1
     )
 
-    xgb_input = sequence[:, -1, :]
+    # -----------------------------------------------------
+    # LSTM
+    # -----------------------------------------------------
 
-    hybrid_input = np.hstack((
-        xgb_input,
-        lstm_feature
-    ))
+    lstm_feature = (
+        lstm_model.predict(
+            sequence,
+            verbose=0
+        )
+    )
 
-    fraud_score = xgb_model.predict_proba(
-        hybrid_input
-    )[0][1]
+    # -----------------------------------------------------
+    # XGBOOST
+    # -----------------------------------------------------
 
-    return float(fraud_score)
+    xgb_input = (
+        sequence[:, -1, :]
+    )
+
+    hybrid_input = np.hstack(
+        (
+            xgb_input,
+            lstm_feature
+        )
+    )
+
+    fraud_score = (
+        xgb_model.predict_proba(
+            hybrid_input
+        )[0][1]
+    )
+
+    return float(
+        fraud_score
+    )
 
 
 # =========================================================
@@ -109,13 +162,26 @@ def predict_single_transaction(
 ):
 
     # -----------------------------------------------------
-    # VALIDATE
+    # VALIDATE EMAIL
     # -----------------------------------------------------
 
-    if not email or "@" not in email:
+    if (
+        not email
+        or "@"
+        not in email
+    ):
+
         raise ValueError(
             "Email tidak valid."
         )
+
+    # -----------------------------------------------------
+    # PARSE TIME
+    # -----------------------------------------------------
+
+    parsed_time = pd.Timestamp(
+        transaction_time
+    )
 
     # -----------------------------------------------------
     # EMAIL DOMAIN
@@ -129,199 +195,34 @@ def predict_single_transaction(
     )
 
     # -----------------------------------------------------
-    # TRANSACTION TIME
+    # SINGLE PREPROCESSING
     # -----------------------------------------------------
 
-    parsed_time = pd.Timestamp(
-        transaction_time
+    data_scaled = (
+        preprocess_single_transaction(
+            amount=amount,
+            product_code=product_code,
+            card_type=card_type,
+            email_domain=email_domain,
+            transaction_hour=parsed_time.hour
+        )
     )
 
     # -----------------------------------------------------
-    # BUILD BASIC TRANSACTION
+    # DEBUG FEATURES
     # -----------------------------------------------------
 
-    transaction = pd.DataFrame([
-        {
-            "TransactionDT": np.nan,
-            "TransactionAmt": amount,
-            "ProductCD": product_code,
-            "card4": card_type,
-            "P_emaildomain": email_domain,
-
-            # JANGAN membuat P dan R sama.
-            # Kita tidak mengetahui R_emaildomain
-            # dari form single.
-            "R_emaildomain": np.nan,
-        }
-    ])
-
-    # -----------------------------------------------------
-    # FEATURE ENGINEERING
-    # -----------------------------------------------------
-
-    transaction = create_features(
-        transaction
+    scaled_row = (
+        data_scaled[0]
     )
-
-    # -----------------------------------------------------
-    # SINGLE-SPECIFIC FEATURE OVERRIDE
-    # -----------------------------------------------------
-    #
-    # Single transaction tidak mempunyai informasi
-    # lengkap seperti dataset training.
-    #
-    # Karena itu jangan biarkan feature yang tidak diketahui
-    # menghasilkan nilai ekstrem.
-    # -----------------------------------------------------
-
-    if "missing_count" in transaction.columns:
-
-        missing_idx = feature_names.index(
-            "missing_count"
-        )
-
-        transaction["missing_count"] = (
-            scaler.mean_[missing_idx]
-        )
-
-    if "email_match" in transaction.columns:
-
-        email_match_idx = feature_names.index(
-            "email_match"
-        )
-
-        transaction["email_match"] = (
-            scaler.mean_[email_match_idx]
-        )
-
-    # -----------------------------------------------------
-    # ADD HOUR MANUALLY
-    # -----------------------------------------------------
-
-    transaction["transaction_hour"] = (
-        parsed_time.hour
-    )
-
-    transaction["is_night_transaction"] = int(
-        parsed_time.hour <= 5
-        or parsed_time.hour >= 23
-    )
-
-    # -----------------------------------------------------
-    # REMOVE ID
-    # -----------------------------------------------------
-
-    if "TransactionID" in transaction.columns:
-
-        transaction = transaction.drop(
-            columns=["TransactionID"]
-        )
-
-    # -----------------------------------------------------
-    # ALIGN TO 444 FEATURES
-    # -----------------------------------------------------
-
-    aligned = pd.DataFrame(
-        index=transaction.index,
-        columns=feature_names,
-        dtype=float
-    )
-
-    # -----------------------------------------------------
-    # COPY AVAILABLE FEATURES
-    # -----------------------------------------------------
-
-    for feature in feature_names:
-
-        if feature in transaction.columns:
-
-            value = transaction.iloc[0][feature]
-
-            numeric_value = pd.to_numeric(
-                pd.Series([value]),
-                errors="coerce"
-            ).iloc[0]
-
-            if pd.notna(numeric_value):
-
-                aligned.loc[
-                    aligned.index[0],
-                    feature
-                ] = float(numeric_value)
-
-    # -----------------------------------------------------
-    # HANDLE UNKNOWN FEATURES
-    # -----------------------------------------------------
-    #
-    # Feature yang memang tidak tersedia pada single
-    # menggunakan mean training sebagai nilai netral.
-    # -----------------------------------------------------
-
-    for i, feature in enumerate(feature_names):
-
-        value = aligned.iloc[0, i]
-
-        if pd.isna(value):
-
-            aligned.iloc[0, i] = (
-                scaler.mean_[i]
-            )
-
-    # -----------------------------------------------------
-    # TRANSACTIONDT
-    # -----------------------------------------------------
-
-    if "TransactionDT" in feature_names:
-
-        idx = feature_names.index(
-            "TransactionDT"
-        )
-
-        aligned.iloc[0, idx] = (
-            scaler.mean_[idx]
-        )
-
-    # -----------------------------------------------------
-    # CLEAN NUMERIC VALUES
-    # -----------------------------------------------------
-
-    aligned = aligned.replace(
-        [np.inf, -np.inf],
-        np.nan
-    )
-
-    # -----------------------------------------------------
-    # FINAL FALLBACK
-    # -----------------------------------------------------
-
-    for i in range(len(feature_names)):
-
-        if pd.isna(aligned.iloc[0, i]):
-
-            aligned.iloc[0, i] = (
-                scaler.mean_[i]
-            )
-
-    # -----------------------------------------------------
-    # SCALE
-    # -----------------------------------------------------
-
-    data_scaled = scaler.transform(
-        aligned
-    )
-
-    # -----------------------------------------------------
-    # DEBUG EXTREME FEATURES
-    # -----------------------------------------------------
-
-    scaled_row = data_scaled[0]
 
     print(
         "\n========== SINGLE FEATURES =========="
     )
 
     print(
-        f"Feature count : {data_scaled.shape[1]}"
+        f"Feature count : "
+        f"{data_scaled.shape[1]}"
     )
 
     print(
@@ -342,28 +243,50 @@ def predict_single_transaction(
     )
 
     # -----------------------------------------------------
-    # VALIDATE 444 FEATURES
+    # VALIDATE 444
     # -----------------------------------------------------
 
     expected_features = (
         scaler.n_features_in_
     )
 
-    if data_scaled.shape[1] != expected_features:
+    if (
+        data_scaled.shape[1]
+        != expected_features
+    ):
 
         raise ValueError(
-            f"Jumlah fitur hasil preprocessing harus "
-            f"{expected_features}, tetapi mendapat "
+            "Jumlah fitur hasil "
+            "preprocessing harus "
+            f"{expected_features}, "
+            f"tetapi mendapat "
             f"{data_scaled.shape[1]}"
         )
 
     # -----------------------------------------------------
-    # SINGLE TRANSACTION SEQUENCE
+    # DETERMINE LSTM SEQUENCE LENGTH
     # -----------------------------------------------------
     #
-    # TIDAK menggunakan csv_sequence_buffer.
+    # Jangan hardcode sequence length berdasarkan
+    # asumsi dokumentasi.
     #
-    # Single transaction tetap berdiri sendiri.
+    # Ambil langsung dari model LSTM.
+    # -----------------------------------------------------
+
+    lstm_input_shape = (
+        lstm_model.input_shape
+    )
+
+    sequence_length = (
+        lstm_input_shape[1]
+    )
+
+    if sequence_length is None:
+
+        sequence_length = 20
+
+    # -----------------------------------------------------
+    # SINGLE SEQUENCE
     # -----------------------------------------------------
 
     current_transaction = (
@@ -374,7 +297,9 @@ def predict_single_transaction(
         np.zeros_like(
             current_transaction
         )
-        for _ in range(19)
+        for _ in range(
+            sequence_length - 1
+        )
     ]
 
     sequence.append(
@@ -386,7 +311,7 @@ def predict_single_transaction(
         dtype=np.float32
     ).reshape(
         1,
-        20,
+        sequence_length,
         -1
     )
 
@@ -394,9 +319,11 @@ def predict_single_transaction(
     # LSTM
     # -----------------------------------------------------
 
-    lstm_feature = lstm_model.predict(
-        sequence,
-        verbose=0
+    lstm_feature = (
+        lstm_model.predict(
+            sequence,
+            verbose=0
+        )
     )
 
     # -----------------------------------------------------
@@ -407,10 +334,12 @@ def predict_single_transaction(
         sequence[:, -1, :]
     )
 
-    hybrid_input = np.hstack((
-        xgb_input,
-        lstm_feature
-    ))
+    hybrid_input = np.hstack(
+        (
+            xgb_input,
+            lstm_feature
+        )
+    )
 
     fraud_probability = (
         xgb_model.predict_proba(
@@ -431,46 +360,79 @@ def predict_single_transaction(
     )
 
     print("Input:")
-    print(f"  Amount       : {amount}")
-    print(f"  Product Code : {product_code}")
-    print(f"  Card Type    : {card_type}")
-    print(f"  Email        : {email}")
-    print(f"  Time         : {transaction_time}")
 
-    print("\nPreprocessed:")
+    print(
+        f"  Amount       : {amount}"
+    )
+
+    print(
+        f"  Product Code : {product_code}"
+    )
+
+    print(
+        f"  Card Type    : {card_type}"
+    )
+
+    print(
+        f"  Email        : {email}"
+    )
+
+    print(
+        f"  Time         : {transaction_time}"
+    )
+
+    print(
+        "\nPreprocessed:"
+    )
+
     print(
         f"  Shape : {data_scaled.shape}"
     )
 
-    print("\nScaled statistics:")
     print(
-        f"  Min  : {data_scaled.min():.6f}"
+        "\nScaled statistics:"
     )
 
     print(
-        f"  Max  : {data_scaled.max():.6f}"
+        f"  Min  : "
+        f"{data_scaled.min():.6f}"
     )
 
     print(
-        f"  Mean : {data_scaled.mean():.6f}"
+        f"  Max  : "
+        f"{data_scaled.max():.6f}"
     )
 
-    print("\nSequence:")
+    print(
+        f"  Mean : "
+        f"{data_scaled.mean():.6f}"
+    )
+
+    print(
+        "\nSequence:"
+    )
+
     print(
         f"  Shape : {sequence.shape}"
     )
 
-    print("\nXGBoost probability:")
     print(
-        f"  SAFE  : {fraud_probability[0]:.6f}"
+        "\nXGBoost probability:"
     )
 
     print(
-        f"  FRAUD : {fraud_probability[1]:.6f}"
+        f"  SAFE  : "
+        f"{fraud_probability[0]:.6f}"
     )
 
     print(
-        f"\nFinal fraud score: {fraud_score:.6f}"
+        f"  FRAUD : "
+        f"{fraud_probability[1]:.6f}"
+    )
+
+    print(
+        f"\nFinal fraud score: "
+        f"{fraud_score:.6f}"
     )
 
     print(
