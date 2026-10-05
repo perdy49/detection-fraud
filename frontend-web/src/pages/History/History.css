@@ -1,0 +1,254 @@
+.history {
+  padding: 80px 10%;
+}
+
+/* ==========================================
+   History Header
+========================================== */
+
+.history-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.history-header h1 {
+  font-size: 2.7rem;
+  margin-bottom: 15px;
+  color: var(--text);
+}
+
+.history-header p {
+  max-width: 700px;
+  margin: auto;
+  color: var(--text-secondary);
+}
+
+
+/* ==========================================
+   Search & Filter
+========================================== */
+
+.history-search {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.history-search input,
+.history-search select {
+  padding: 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  outline: none;
+
+  transition: var(--transition);
+}
+
+.history-search input {
+  flex: 1;
+}
+
+.history-search input::placeholder {
+  color: var(--text-secondary);
+}
+
+.history-search input:focus,
+.history-search select:focus {
+  border-color: var(--primary);
+}
+
+
+/* ==========================================
+   History List
+========================================== */
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+
+/* ==========================================
+   History Card
+========================================== */
+
+.history-card {
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  padding: 30px;
+
+  box-shadow: var(--shadow);
+
+  transition: var(--transition);
+}
+
+.history-card:hover {
+  transform: translateY(-3px);
+}
+
+
+/* ==========================================
+   History Top
+========================================== */
+
+.history-top {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 25px;
+}
+
+.history-top h3 {
+  color: var(--text);
+}
+
+
+/* ==========================================
+   History Body
+========================================== */
+
+.history-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.history-body label {
+  display: block;
+
+  color: var(--text-secondary);
+
+  margin-bottom: 8px;
+}
+
+.history-body p {
+  color: var(--text);
+  font-weight: 600;
+}
+
+
+/* ==========================================
+   Status
+========================================== */
+
+.safe,
+.fraud {
+  padding: 8px 18px;
+
+  border-radius: 30px;
+
+  font-weight: 600;
+}
+
+
+/* Legitimate / Safe */
+
+.safe {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+
+/* Unauthorized / Fraud */
+
+.fraud {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+
+/* ==========================================
+   Responsive
+========================================== */
+
+/* Tablet */
+
+@media (max-width: 900px) {
+
+  .history {
+    padding: 60px 8%;
+  }
+
+}
+
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .history {
+    padding: 50px 8%;
+  }
+
+  .history-header {
+    margin-bottom: 40px;
+  }
+
+  .history-header h1 {
+    font-size: 2.2rem;
+  }
+
+  .history-header p {
+    font-size: 15px;
+  }
+
+  .history-card {
+    padding: 24px;
+  }
+
+  .history-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .history-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+}
+
+
+/* Small Mobile */
+
+@media (max-width: 480px) {
+
+  .history {
+    padding: 40px 6%;
+  }
+
+  .history-header h1 {
+    font-size: 1.9rem;
+  }
+
+  .history-header p {
+    font-size: 14px;
+  }
+
+  .history-card {
+    padding: 20px;
+  }
+
+  .history-search {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .history-search input,
+  .history-search select {
+    width: 100%;
+  }
+
+}

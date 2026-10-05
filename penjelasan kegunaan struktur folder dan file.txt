@@ -1,0 +1,178 @@
+Struktur Project: SISTEM BACKEND-AI
+Folder __pycache__
+
+Berisi file cache Python (.pyc) yang dibuat otomatis saat program dijalankan.
+
+Intinya: folder ini untuk mempercepat proses eksekusi Python dan tidak berisi kode utama project.
+
+Folder data
+train_identity.csv
+
+Berisi data identitas pengguna atau perangkat yang digunakan dalam transaksi.
+
+Intinya: file ini untuk menyimpan informasi identitas yang digunakan sebagai fitur pendukung deteksi fraud.
+
+train_transaction.csv
+
+Berisi data transaksi utama beserta label fraud atau non-fraud.
+
+Intinya: file ini untuk menjadi sumber data utama dalam pelatihan model deteksi fraud.
+
+Folder logs
+
+Menyimpan catatan aktivitas sistem, error, proses training, maupun prediksi.
+
+Intinya: folder ini untuk merekam aktivitas sistem agar mudah dipantau dan diperbaiki saat terjadi masalah.
+
+Folder model
+
+Folder penyimpanan seluruh model dan file pendukung setelah proses training selesai.
+
+feature_names.pkl
+
+Menyimpan daftar nama fitur yang digunakan model saat training.
+
+Intinya: file ini untuk memastikan data prediksi memiliki susunan fitur yang sama dengan data training.
+
+lstm_model.h5
+
+Model LSTM yang sudah dilatih dan disimpan dalam format HDF5.
+
+Intinya: file ini untuk menyimpan hasil pelatihan model LSTM.
+
+lstm_model.keras
+
+Model LSTM yang disimpan menggunakan format Keras terbaru.
+
+Intinya: file ini untuk menyimpan model LSTM agar dapat digunakan kembali tanpa training ulang.
+
+scaler.pkl
+
+Menyimpan objek scaler yang digunakan saat normalisasi data.
+
+Intinya: file ini untuk memastikan data baru diproses dengan skala yang sama seperti saat training.
+
+xgb_model.pkl
+
+Menyimpan model XGBoost yang telah selesai dilatih.
+
+Intinya: file ini untuk melakukan prediksi fraud menggunakan model XGBoost tanpa training ulang.
+
+Folder processed
+
+Folder hasil preprocessing data.
+
+Biasanya berisi dataset yang sudah dibersihkan, diubah formatnya, dan siap digunakan model.
+
+Intinya: folder ini untuk menyimpan data yang sudah siap digunakan dalam training maupun evaluasi.
+
+Folder results
+
+Folder penyimpanan hasil evaluasi model.
+
+confusion_matrix...
+
+Gambar atau hasil confusion matrix.
+
+Intinya: file ini untuk melihat jumlah prediksi benar dan salah dari model.
+
+roc_curve.png
+
+Grafik ROC Curve.
+
+Intinya: file ini untuk mengukur kemampuan model dalam membedakan transaksi fraud dan non-fraud.
+
+Folder schemas
+
+Folder validasi struktur data.
+
+transaction_schema.py
+
+Mendefinisikan format data transaksi yang harus diterima sistem.
+
+Intinya: file ini untuk memastikan data transaksi memiliki format yang benar sebelum diproses.
+
+Folder services
+
+Folder utama yang berisi seluruh logika bisnis dan proses machine learning.
+
+Intinya: folder ini untuk menjalankan seluruh proses AI mulai dari membaca data hingga melakukan prediksi.
+
+config.py
+
+Berisi konfigurasi project.
+
+Intinya: file ini untuk menyimpan pengaturan yang digunakan oleh seluruh sistem.
+
+data_loader.py
+
+Membaca dan memuat dataset dari folder data.
+
+Intinya: file ini untuk mengambil data transaksi dan identitas ke dalam program.
+
+evaluate.py
+
+Melakukan evaluasi performa model.
+
+Intinya: file ini untuk menghitung metrik seperti accuracy, precision, recall, F1-score, dan ROC-AUC.
+
+feature_engineering.py
+
+Melakukan pembuatan atau pemilihan fitur baru dari data mentah.
+
+Intinya: file ini untuk menghasilkan fitur yang lebih informatif agar model lebih akurat.
+
+logger.py
+
+Mengatur pencatatan log sistem.
+
+Intinya: file ini untuk mencatat aktivitas dan error yang terjadi selama program berjalan.
+
+model_utils.py
+
+Berisi fungsi-fungsi bantuan terkait model machine learning.
+
+Intinya: file ini untuk menyediakan utilitas yang mendukung proses training, penyimpanan, dan pemanggilan model.
+
+predict.py
+
+Melakukan prediksi menggunakan model yang telah dilatih.
+
+Intinya: file ini untuk menentukan apakah suatu transaksi termasuk fraud atau tidak.
+
+preprocess.py
+
+Melakukan pembersihan dan transformasi data sebelum training.
+
+Intinya: file ini untuk menyiapkan data agar dapat diproses oleh model machine learning.
+
+sequence.py
+
+Mengolah data menjadi bentuk urutan (sequence) untuk kebutuhan LSTM.
+
+Intinya: file ini untuk membentuk data time-series atau sequence yang dapat dipahami oleh model LSTM.
+
+train.py
+
+Melakukan pelatihan model machine learning.
+
+Intinya: file ini untuk membangun dan melatih model deteksi fraud menggunakan dataset yang tersedia.
+
+File Root Project
+.gitignore
+
+Daftar file atau folder yang tidak akan dikirim ke GitHub.
+
+Intinya: file ini untuk mencegah file yang tidak diperlukan ikut tersimpan di repository.
+
+main.py
+
+File utama yang menjalankan aplikasi backend.
+
+Intinya: file ini untuk menghubungkan seluruh komponen sistem AI dan menyediakan layanan utama aplikasi.
+
+requirements.txt
+
+Daftar library Python yang dibutuhkan project.
+
+Intinya: file ini untuk memastikan semua dependensi yang diperlukan dapat diinstal dengan mudah.

@@ -1,0 +1,1266 @@
+1. transaction_schema.py
+from pydantic import BaseModel, Field
+
+Mengimpor library untuk membuat dan memvalidasi struktur data.
+
+Intinya: digunakan untuk validasi input data.
+
+from typing import List
+
+Mengimpor tipe data list.
+
+Intinya: digunakan untuk mendefinisikan data berupa daftar nilai.
+
+class TransactionSchema(BaseModel)
+
+Membuat schema atau format data transaksi yang harus diterima sistem.
+
+Intinya: menentukan struktur input transaksi.
+
+features: List[float] = Field(...)
+
+Mendefinisikan fitur transaksi berupa daftar angka desimal dan wajib diisi.
+
+Intinya: menerima data fitur hasil preprocessing untuk diprediksi model.
+
+2. config.py
+import os
+
+Mengimpor library untuk mengelola path file dan folder.
+
+Intinya: digunakan untuk mengatur lokasi penyimpanan file secara otomatis.
+
+TRAIN_TRANSACTION_PATH
+
+Menyimpan lokasi file data transaksi training.
+
+Intinya: menentukan sumber data transaksi untuk pelatihan model.
+
+TRAIN_IDENTITY_PATH
+
+Menyimpan lokasi file data identitas training.
+
+Intinya: menentukan sumber data identitas untuk pelatihan model.
+
+TEST_TRANSACTION_PATH
+
+Menyimpan lokasi file data transaksi testing.
+
+Intinya: menentukan sumber data transaksi untuk pengujian model.
+
+TEST_IDENTITY_PATH
+
+Menyimpan lokasi file data identitas testing.
+
+Intinya: menentukan sumber data identitas untuk pengujian model.
+
+MODEL_DIR
+
+Menentukan folder penyimpanan model.
+
+Intinya: menjadi lokasi utama penyimpanan seluruh model AI.
+
+XGB_MODEL_PATH
+
+Menentukan lokasi penyimpanan model XGBoost.
+
+Intinya: menyimpan dan memanggil model XGBoost.
+
+LSTM_MODEL_PATH
+
+Menentukan lokasi penyimpanan model LSTM.
+
+Intinya: menyimpan dan memanggil model LSTM.
+
+SCALER_PATH
+
+Menentukan lokasi penyimpanan scaler.
+
+Intinya: menyimpan proses normalisasi data.
+
+FEATURE_NAMES_PATH
+
+Menentukan lokasi penyimpanan nama fitur.
+
+Intinya: menjaga konsistensi fitur saat training dan prediksi.
+
+RESULTS_DIR
+
+Menentukan folder penyimpanan hasil evaluasi.
+
+Intinya: menyimpan output seperti grafik dan metrik evaluasi.
+
+SEQUENCE_LENGTH = 10
+
+Menentukan panjang urutan data untuk LSTM.
+
+Intinya: mengatur jumlah data yang digunakan dalam satu sequence.
+
+LSTM_UNITS = 32
+
+Menentukan jumlah neuron pada layer LSTM.
+
+Intinya: mengatur kapasitas pembelajaran model LSTM.
+
+BATCH_SIZE = 32
+
+Menentukan jumlah data yang diproses dalam satu batch.
+
+Intinya: mengatur proses pelatihan model agar lebih efisien.
+
+EPOCHS = 10
+
+Menentukan jumlah iterasi pelatihan model.
+
+Intinya: mengatur berapa kali model mempelajari seluruh dataset.
+
+RANDOM_STATE = 42
+
+Menentukan nilai random tetap.
+
+Intinya: memastikan hasil training dapat direproduksi secara konsisten.
+
+3. data_loader.py
+import pandas as pd
+
+Mengimor library Pandas untuk membaca dan mengelola dataset.
+
+Intinya: digunakan untuk pengolahan data berbentuk tabel.
+
+load_train_data()
+
+Membaca dataset transaksi dan identitas untuk data training.
+
+Intinya: mengambil data training dari file CSV.
+
+pd.read_csv(transaction_path)
+
+Membaca file transaksi.
+
+Intinya: memuat data transaksi ke dalam DataFrame.
+
+pd.read_csv(identity_path)
+
+Membaca file identitas.
+
+Intinya: memuat data identitas ke dalam DataFrame.
+
+pd.merge(..., on="TransactionID", how="left")
+
+Menggabungkan data transaksi dan identitas berdasarkan TransactionID.
+
+Intinya: menyatukan seluruh informasi transaksi dan identitas dalam satu dataset.
+
+return df
+
+Mengembalikan hasil penggabungan data.
+
+Intinya: mengirim dataset yang siap digunakan ke proses berikutnya.
+
+load_test_data()
+
+Membaca dataset transaksi dan identitas untuk data testing.
+
+Intinya: mengambil data testing dari file CSV.
+
+pd.read_csv(transaction_path)
+
+Membaca file transaksi testing.
+
+Intinya: memuat data transaksi testing.
+
+pd.read_csv(identity_path)
+
+Membaca file identitas testing.
+
+Intinya: memuat data identitas testing.
+
+pd.merge(..., on="TransactionID", how="left")
+
+Menggabungkan data transaksi dan identitas testing berdasarkan TransactionID.
+
+Intinya: menyatukan seluruh informasi data testing dalam satu dataset.
+
+return df
+
+Mengembalikan hasil penggabungan data testing.
+
+Intinya: mengirim dataset testing yang siap digunakan.
+
+4. evaluate.py
+import os
+
+Mengimpor library untuk mengelola folder dan file.
+
+Intinya: digunakan untuk membuat folder hasil evaluasi.
+
+import numpy as np
+
+Mengimpor NumPy untuk operasi numerik.
+
+Intinya: digunakan untuk pengecekan dan perhitungan data.
+
+import matplotlib.pyplot as plt
+
+Mengimpor Matplotlib untuk visualisasi.
+
+Intinya: digunakan untuk membuat grafik evaluasi.
+
+import seaborn as sns
+
+Mengimpor Seaborn untuk visualisasi yang lebih menarik.
+
+Intinya: digunakan untuk membuat heatmap confusion matrix.
+
+from sklearn.metrics
+
+Mengimpor berbagai metrik evaluasi model.
+
+Intinya: digunakan untuk mengukur performa model deteksi fraud.
+
+def evaluate_model(y_true, y_pred, y_prob)
+
+Membuat fungsi evaluasi model.
+
+Intinya: menjalankan seluruh proses pengukuran performa model.
+
+os.makedirs("results", exist_ok=True)
+
+Membuat folder results jika belum tersedia.
+
+Intinya: menyiapkan lokasi penyimpanan hasil evaluasi.
+
+accuracy_score()
+
+Menghitung tingkat prediksi yang benar.
+
+Intinya: mengukur akurasi model.
+
+precision_score()
+
+Menghitung ketepatan prediksi fraud.
+
+Intinya: mengukur seberapa banyak prediksi fraud yang benar.
+
+recall_score()
+
+Menghitung kemampuan mendeteksi fraud.
+
+Intinya: mengukur seberapa banyak kasus fraud berhasil ditemukan.
+
+f1_score()
+
+Menghitung keseimbangan precision dan recall.
+
+Intinya: mengukur performa model secara keseluruhan.
+
+roc_auc_score()
+
+Menghitung nilai ROC-AUC.
+
+Intinya: mengukur kemampuan model membedakan fraud dan non-fraud.
+
+print()
+
+Menampilkan hasil evaluasi ke terminal.
+
+Intinya: memberikan informasi performa model kepada pengguna.
+
+classification_report()
+
+Menampilkan laporan klasifikasi lengkap.
+
+Intinya: memberikan detail precision, recall, dan F1-score setiap kelas.
+
+confusion_matrix()
+
+Membuat confusion matrix.
+
+Intinya: melihat jumlah prediksi benar dan salah dari model.
+
+sns.heatmap()
+
+Membuat visualisasi confusion matrix.
+
+Intinya: mempermudah analisis hasil prediksi model.
+
+plt.savefig("results/confusion_matrix.png")
+
+Menyimpan gambar confusion matrix.
+
+Intinya: menyimpan hasil evaluasi dalam bentuk visual.
+
+roc_curve()
+
+Menghitung nilai False Positive Rate dan True Positive Rate.
+
+Intinya: menghasilkan data untuk grafik ROC Curve.
+
+plt.plot()
+
+Membuat grafik ROC Curve.
+
+Intinya: menampilkan kemampuan klasifikasi model.
+
+plt.savefig("results/roc_curve.png")
+
+Menyimpan grafik ROC Curve.
+
+Intinya: menyimpan visualisasi performa model.
+
+return {...}
+
+Mengembalikan seluruh hasil evaluasi.
+
+Intinya: menyediakan metrik evaluasi untuk digunakan proses lain.
+
+5. feature_engineering.py
+import pandas as pd
+
+Mengimpor library Pandas.
+
+Intinya: digunakan untuk manipulasi data.
+
+import numpy as np
+
+Mengimpor library NumPy.
+
+Intinya: digunakan untuk perhitungan numerik.
+
+def create_features(df)
+
+Membuat fitur-fitur baru dari dataset asli.
+
+Intinya: meningkatkan kualitas data sebelum masuk ke model.
+
+df = df.copy()
+
+Menyalin dataframe.
+
+Intinya: mencegah perubahan pada data asli.
+
+amount_log
+
+Melakukan transformasi logaritma pada TransactionAmt.
+
+Intinya: menstabilkan distribusi nilai transaksi yang terlalu besar.
+
+email_match
+
+Membandingkan email pengirim dan penerima.
+
+Intinya: mendeteksi kesamaan domain email yang berpotensi menjadi indikator fraud.
+
+card1_frequency
+
+Menghitung frekuensi kemunculan kartu.
+
+Intinya: mengetahui seberapa sering kartu digunakan dalam transaksi.
+
+card1_amt_mean
+
+Menghitung rata-rata nominal transaksi setiap kartu.
+
+Intinya: melihat pola transaksi berdasarkan kartu.
+
+addr1_amt_mean
+
+Menghitung rata-rata nominal transaksi setiap alamat.
+
+Intinya: melihat pola transaksi berdasarkan lokasi.
+
+addr_match
+
+Menggabungkan addr1 dan addr2.
+
+Intinya: membentuk identitas lokasi transaksi yang lebih spesifik.
+
+transaction_hour
+
+Mengubah waktu transaksi menjadi jam.
+
+Intinya: mengetahui kapan transaksi terjadi.
+
+is_night_transaction
+
+Menandai transaksi yang terjadi malam hari.
+
+Intinya: mendeteksi transaksi pada jam yang lebih berisiko.
+
+missing_count
+
+Menghitung jumlah data kosong pada setiap transaksi.
+
+Intinya: mengukur tingkat kelengkapan data.
+
+C_sum
+
+Menjumlahkan seluruh fitur yang diawali huruf C.
+
+Intinya: merangkum informasi kelompok fitur C menjadi satu nilai.
+
+D_sum
+
+Menjumlahkan seluruh fitur yang diawali huruf D.
+
+Intinya: merangkum informasi kelompok fitur D menjadi satu nilai.
+
+V_mean
+
+Menghitung rata-rata seluruh fitur yang diawali huruf V.
+
+Intinya: menyederhanakan ratusan fitur V menjadi informasi yang lebih ringkas.
+
+df.replace([np.inf, -np.inf], 0)
+
+Mengganti nilai tak hingga menjadi 0.
+
+Intinya: mencegah error saat training model.
+
+df.fillna(0)
+
+Mengisi nilai kosong dengan 0.
+
+Intinya: memastikan tidak ada data kosong yang mengganggu proses machine learning.
+
+return df
+
+Mengembalikan dataframe yang telah ditambahkan fitur baru.
+
+Intinya: menghasilkan dataset yang siap masuk ke tahap preprocessing dan training.
+
+6. logger.py
+import logging
+
+Mengimpor library logging.
+
+Intinya: digunakan untuk mencatat aktivitas dan error sistem.
+
+import os
+
+Mengimpor library pengelolaan file dan folder.
+
+Intinya: digunakan untuk membuat folder penyimpanan log.
+
+def setup_logger()
+
+Membuat fungsi konfigurasi logger.
+
+Intinya: menyiapkan sistem pencatatan aktivitas aplikasi.
+
+os.makedirs("results", exist_ok=True)
+
+Membuat folder results jika belum ada.
+
+Intinya: menyiapkan lokasi penyimpanan file log.
+
+logging.getLogger("fraud_detection")
+
+Membuat logger bernama fraud_detection.
+
+Intinya: membuat objek logger khusus untuk sistem deteksi fraud.
+
+logger.setLevel(logging.INFO)
+
+Menentukan level logging.
+
+Intinya: mencatat informasi penting, warning, dan error.
+
+if not logger.handlers
+
+Memastikan handler tidak dibuat berulang kali.
+
+Intinya: mencegah duplikasi log.
+
+logging.FileHandler("results/training.log")
+
+Membuat penyimpanan log ke file.
+
+Intinya: menyimpan riwayat aktivitas training ke file training.log.
+
+logging.StreamHandler()
+
+Membuat tampilan log ke terminal.
+
+Intinya: menampilkan aktivitas sistem secara langsung saat program berjalan.
+
+logging.Formatter(...)
+
+Membuat format tampilan log.
+
+Intinya: menampilkan waktu, level log, dan pesan secara terstruktur.
+
+setFormatter()
+
+Menerapkan format ke handler.
+
+Intinya: menyamakan format log pada file dan terminal.
+
+addHandler()
+
+Menambahkan handler ke logger.
+
+Intinya: mengaktifkan pencatatan log ke file dan terminal.
+
+return logger
+
+Mengembalikan objek logger.
+
+Intinya: menyediakan logger yang siap digunakan pada file lain.
+
+7. model_utils.py
+import joblib
+
+Mengimpor library Joblib.
+
+Intinya: digunakan untuk memuat file model dan scaler yang disimpan dalam format .pkl.
+
+from tensorflow.keras.models import load_model
+
+Mengimpor fungsi load_model.
+
+Intinya: digunakan untuk memuat model LSTM yang telah dilatih.
+
+def load_hybrid_models()
+
+Membuat fungsi untuk memuat seluruh komponen model hybrid.
+
+Intinya: mengumpulkan semua model dan file pendukung dalam satu fungsi.
+
+joblib.load("model/xgb_model.pkl")
+
+Memuat model XGBoost.
+
+Intinya: mengambil model XGBoost yang siap digunakan untuk prediksi.
+
+joblib.load("model/scaler.pkl")
+
+Memuat scaler.
+
+Intinya: memastikan data baru dinormalisasi dengan cara yang sama seperti saat training.
+
+joblib.load("model/feature_names.pkl")
+
+Memuat daftar nama fitur.
+
+Intinya: menjaga kesesuaian urutan fitur saat prediksi.
+
+load_model("model/lstm_model.keras")
+
+Memuat model LSTM.
+
+Intinya: mengambil model LSTM yang siap digunakan untuk prediksi.
+
+return {...}
+
+Mengembalikan seluruh model dan file pendukung dalam bentuk dictionary.
+
+Intinya: menyediakan seluruh komponen yang dibutuhkan untuk proses prediksi.
+
+8. predict.py
+import joblib
+
+Mengimpor library Joblib.
+
+Intinya: digunakan untuk memuat model dan scaler.
+
+import numpy as np
+
+Mengimpor library NumPy.
+
+Intinya: digunakan untuk pengolahan data numerik.
+
+from collections import deque
+
+Mengimpor struktur data deque.
+
+Intinya: digunakan untuk menyimpan riwayat transaksi dalam bentuk sequence.
+
+from tensorflow.keras.models import load_model
+
+Mengimpor fungsi pemuat model Keras.
+
+Intinya: digunakan untuk memuat model LSTM.
+
+xgb_model = joblib.load(...)
+
+Memuat model XGBoost.
+
+Intinya: menyiapkan model XGBoost untuk prediksi.
+
+scaler = joblib.load(...)
+
+Memuat scaler.
+
+Intinya: menyiapkan proses normalisasi data.
+
+lstm_model = load_model(...)
+
+Memuat model LSTM.
+
+Intinya: menyiapkan model LSTM untuk ekstraksi pola transaksi.
+
+sequence_buffer = deque(maxlen=10)
+
+Membuat buffer dengan kapasitas 10 transaksi terakhir.
+
+Intinya: menyimpan riwayat transaksi sebagai input LSTM.
+
+def predict_transaction(data)
+
+Membuat fungsi prediksi transaksi.
+
+Intinya: menjalankan proses deteksi fraud pada data baru.
+
+expected_features = scaler.n_features_in_
+
+Mengambil jumlah fitur yang diharapkan model.
+
+Intinya: memastikan jumlah fitur input sesuai dengan model.
+
+if len(data) != expected_features
+
+Melakukan validasi jumlah fitur.
+
+Intinya: mencegah kesalahan input data.
+
+np.array(...).reshape(1, -1)
+
+Mengubah data menjadi format NumPy.
+
+Intinya: menyiapkan data untuk proses machine learning.
+
+scaler.transform(data)
+
+Melakukan normalisasi data.
+
+Intinya: menyamakan skala data dengan data training.
+
+sequence_buffer.append(data_scaled)
+
+Menambahkan transaksi ke buffer.
+
+Intinya: menyimpan transaksi terbaru untuk membentuk sequence.
+
+while len(sequence) < 10
+
+Menambahkan data nol jika sequence belum penuh.
+
+Intinya: memastikan panjang sequence selalu 10 langkah.
+
+np.array(...).reshape(1, 10, -1)
+
+Membentuk data menjadi format sequence LSTM.
+
+Intinya: menyesuaikan bentuk input untuk model LSTM.
+
+lstm_model.predict(...)
+
+Menghasilkan fitur dari model LSTM.
+
+Intinya: menangkap pola transaksi berdasarkan urutan waktu.
+
+xgb_input = sequence[:, -1, :]
+
+Mengambil fitur transaksi terakhir.
+
+Intinya: menyiapkan data transaksi terkini untuk XGBoost.
+
+np.hstack(...)
+
+Menggabungkan fitur LSTM dan fitur transaksi.
+
+Intinya: membentuk fitur hybrid untuk prediksi akhir.
+
+xgb_model.predict_proba(...)
+
+Menghitung probabilitas fraud.
+
+Intinya: menghasilkan skor kemungkinan transaksi merupakan fraud.
+
+return float(fraud_score)
+
+Mengembalikan hasil prediksi.
+
+Intinya: mengirim nilai probabilitas fraud ke sistem.
+
+9. preprocess.py
+import pandas, numpy, joblib
+
+Mengimpor library pengolahan data dan penyimpanan model.
+
+Intinya: digunakan untuk preprocessing dan penyimpanan scaler.
+
+StandardScaler, LabelEncoder
+
+Mengimpor metode normalisasi dan encoding.
+
+Intinya: digunakan untuk mengubah data agar dapat diproses model.
+
+create_features
+
+Mengimpor fungsi feature engineering.
+
+Intinya: digunakan untuk membuat fitur-fitur baru dari data transaksi.
+
+def preprocess_data(...)
+
+Membuat fungsi preprocessing data.
+
+Intinya: menjalankan seluruh proses persiapan data sebelum training atau prediksi.
+
+pd.read_csv(transaction_path)
+
+Membaca data transaksi.
+
+Intinya: memuat dataset transaksi ke sistem.
+
+pd.read_csv(identity_path)
+
+Membaca data identitas.
+
+Intinya: memuat dataset identitas pengguna.
+
+pd.merge(...)
+
+Menggabungkan data transaksi dan identitas.
+
+Intinya: menyatukan seluruh informasi dalam satu dataset.
+
+sort_values("TransactionDT")
+
+Mengurutkan data berdasarkan waktu transaksi.
+
+Intinya: menjaga urutan kronologis transaksi.
+
+create_features(df)
+
+Menjalankan proses feature engineering.
+
+Intinya: menghasilkan fitur tambahan yang lebih informatif.
+
+y = df["isFraud"]
+
+Mengambil label target fraud.
+
+Intinya: memisahkan data target dari fitur.
+
+drop(columns=["isFraud"])
+
+Menghapus kolom target dari fitur.
+
+Intinya: mencegah kebocoran data saat training.
+
+drop(columns=["TransactionID"])
+
+Menghapus ID transaksi.
+
+Intinya: membuang data identitas yang tidak berpengaruh pada prediksi.
+
+select_dtypes(include=["object"])
+
+Mendeteksi kolom kategorikal.
+
+Intinya: mencari data yang perlu diubah menjadi numerik.
+
+LabelEncoder()
+
+Mengubah data kategorikal menjadi angka.
+
+Intinya: membuat data dapat diproses model machine learning.
+
+fillna("missing")
+
+Mengisi data kategorikal yang kosong.
+
+Intinya: menghindari error akibat nilai kosong.
+
+select_dtypes(include=[np.number])
+
+Mendeteksi kolom numerik.
+
+Intinya: mencari data angka untuk proses pembersihan.
+
+fillna(median)
+
+Mengisi nilai numerik yang kosong dengan median.
+
+Intinya: mengatasi missing value tanpa mengubah distribusi data secara signifikan.
+
+replace([np.inf, -np.inf], 0)
+
+Mengganti nilai tak hingga.
+
+Intinya: mencegah error saat training model.
+
+X = df.copy()
+
+Menyimpan seluruh fitur yang telah diproses.
+
+Intinya: membentuk dataset final untuk model.
+
+feature_names = X.columns.tolist()
+
+Menyimpan nama fitur.
+
+Intinya: menjaga konsistensi fitur saat prediksi.
+
+StandardScaler()
+
+Membuat objek scaler.
+
+Intinya: menormalkan skala data.
+
+scaler.fit_transform(X)
+
+Melatih dan menerapkan normalisasi.
+
+Intinya: menyesuaikan rentang nilai seluruh fitur.
+
+joblib.dump(scaler)
+
+Menyimpan scaler.
+
+Intinya: agar preprocessing saat prediksi sama dengan saat training.
+
+joblib.dump(feature_names)
+
+Menyimpan nama fitur.
+
+Intinya: menjaga urutan fitur tetap konsisten.
+
+joblib.load(scaler.pkl)
+
+Memuat scaler yang sudah disimpan.
+
+Intinya: menggunakan aturan normalisasi yang sama pada data baru.
+
+scaler.transform(X)
+
+Melakukan normalisasi pada data testing atau prediksi.
+
+Intinya: menyiapkan data sebelum masuk ke model.
+
+return X_scaled, y, scaler, feature_names
+
+Mengembalikan hasil preprocessing.
+
+Intinya: menyediakan data yang siap digunakan untuk training atau prediksi.
+
+10. sequence.py
+import numpy as np
+
+Mengimpor library NumPy.
+
+Intinya: digunakan untuk pengolahan array dan sequence.
+
+def create_sequences(X, y, sequence_length=10)
+
+Membuat fungsi pembentukan sequence.
+
+Intinya: mengubah data tabular menjadi data berurutan untuk LSTM.
+
+if len(X) < sequence_length
+
+Memeriksa jumlah data.
+
+Intinya: memastikan data cukup untuk membentuk sequence.
+
+X_sequences = []
+
+Membuat wadah sequence fitur.
+
+Intinya: menyimpan hasil sequence data transaksi.
+
+y_sequences = []
+
+Membuat wadah label sequence.
+
+Intinya: menyimpan target dari setiap sequence.
+
+for i in range(...)
+
+Melakukan perulangan pembentukan sequence.
+
+Intinya: membuat data berurutan menggunakan teknik sliding window.
+
+X_seq = X[i:i + sequence_length]
+
+Mengambil sejumlah data sesuai panjang sequence.
+
+Intinya: membentuk satu sequence transaksi.
+
+y_seq = y[i + sequence_length - 1]
+
+Mengambil label pada transaksi terakhir sequence.
+
+Intinya: menentukan target yang akan diprediksi.
+
+X_sequences.append(X_seq)
+
+Menyimpan sequence fitur.
+
+Intinya: mengumpulkan seluruh sequence transaksi.
+
+y_sequences.append(y_seq)
+
+Menyimpan label sequence.
+
+Intinya: mengumpulkan target setiap sequence.
+
+np.array(X_sequences)
+
+Mengubah sequence menjadi array NumPy.
+
+Intinya: menyiapkan data untuk input LSTM.
+
+np.array(y_sequences)
+
+Mengubah label menjadi array NumPy.
+
+Intinya: menyiapkan target untuk proses training.
+
+print(...)
+
+Menampilkan informasi jumlah sequence yang terbentuk.
+
+Intinya: membantu pengecekan hasil preprocessing.
+
+return X_sequences, y_sequences
+
+Mengembalikan data sequence dan label.
+
+Intinya: menyediakan dataset yang siap digunakan model LSTM.
+
+11. train.py
+import ...
+
+Mengimpor seluruh library yang dibutuhkan seperti XGBoost, TensorFlow, SMOTE, NumPy, dan Scikit-Learn.
+
+Intinya: menyiapkan seluruh tools untuk proses training model hybrid.
+
+sys.path.append(...)
+
+Menambahkan path project ke Python.
+
+Intinya: memungkinkan file dalam folder services dapat diakses.
+
+from services...
+
+Mengimpor fungsi preprocessing, sequence, dan evaluasi.
+
+Intinya: menghubungkan seluruh tahapan training model.
+
+def train_model()
+
+Membuat fungsi utama pelatihan model.
+
+Intinya: menjalankan seluruh proses training dari awal sampai akhir.
+
+transaction_path & identity_path
+
+Menentukan lokasi dataset training.
+
+Intinya: mengambil sumber data yang akan digunakan.
+
+preprocess_data(...)
+
+Melakukan preprocessing dataset.
+
+Intinya: membersihkan, mengubah, dan menormalisasi data sebelum training.
+
+create_sequences(...)
+
+Mengubah data menjadi sequence dengan panjang 20 transaksi.
+
+Intinya: menyiapkan data agar dapat diproses oleh LSTM.
+
+train_test_split(...)
+
+Membagi data menjadi data training dan testing.
+
+Intinya: memisahkan data untuk pelatihan dan evaluasi model.
+
+Sequential()
+
+Membuat arsitektur model LSTM.
+
+Intinya: membangun model deep learning untuk menangkap pola transaksi berurutan.
+
+Input(...)
+
+Menentukan bentuk input data.
+
+Intinya: memberi tahu model ukuran sequence yang digunakan.
+
+LSTM(32)
+
+Menambahkan layer LSTM dengan 32 unit.
+
+Intinya: mempelajari pola temporal pada transaksi.
+
+Dropout(0.2)
+
+Menonaktifkan sebagian neuron saat training.
+
+Intinya: mengurangi risiko overfitting.
+
+Dense(16, activation="relu")
+
+Menambahkan hidden layer.
+
+Intinya: memperkuat proses pembelajaran pola data.
+
+Dense(1, activation="sigmoid")
+
+Menambahkan output layer.
+
+Intinya: menghasilkan probabilitas fraud atau non-fraud.
+
+compile(...)
+
+Mengatur optimizer, loss function, dan metrik.
+
+Intinya: menyiapkan model sebelum proses training.
+
+EarlyStopping(...)
+
+Menghentikan training otomatis jika performa tidak meningkat.
+
+Intinya: mencegah overfitting dan mempercepat training.
+
+lstm_model.fit(...)
+
+Melatih model LSTM.
+
+Intinya: mempelajari pola fraud dari data sequence.
+
+lstm_model.predict(...)
+
+Menghasilkan fitur dari model LSTM.
+
+Intinya: mengekstrak pola yang telah dipelajari LSTM.
+
+X_train[:, -1, :]
+
+Mengambil fitur transaksi terakhir dari sequence.
+
+Intinya: menyiapkan data untuk model XGBoost.
+
+np.hstack(...)
+
+Menggabungkan fitur transaksi dan fitur hasil LSTM.
+
+Intinya: membentuk dataset hybrid.
+
+SMOTE(...)
+
+Melakukan oversampling pada data fraud.
+
+Intinya: mengurangi ketidakseimbangan kelas pada data training.
+
+XGBClassifier(...)
+
+Membangun model XGBoost.
+
+Intinya: melakukan klasifikasi fraud menggunakan fitur hybrid.
+
+xgb_model.fit(...)
+
+Melatih model XGBoost.
+
+Intinya: mempelajari pola fraud dari fitur hybrid.
+
+predict() dan predict_proba()
+
+Melakukan prediksi dan menghitung probabilitas fraud.
+
+Intinya: menghasilkan keputusan dan skor fraud.
+
+prediction_probs > 0.35
+
+Mengubah probabilitas menjadi label prediksi.
+
+Intinya: meningkatkan sensitivitas model terhadap fraud dengan threshold 0.35.
+
+latency calculation
+
+Menghitung waktu prediksi per transaksi.
+
+Intinya: mengukur kecepatan sistem untuk kebutuhan real-time.
+
+evaluate_model(...)
+
+Melakukan evaluasi model.
+
+Intinya: menghitung Accuracy, Precision, Recall, F1-Score, dan ROC-AUC.
+
+accuracy_score(...)
+
+Menghitung akurasi model.
+
+Intinya: mengetahui tingkat prediksi yang benar.
+
+joblib.dump(...)
+
+Menyimpan model XGBoost dan scaler.
+
+Intinya: agar model dapat digunakan kembali tanpa training ulang.
+
+lstm_model.save(...)
+
+Menyimpan model LSTM.
+
+Intinya: menyimpan hasil pelatihan deep learning.
+
+if __name__ == "__main__"
+
+Menjalankan fungsi training saat file dieksekusi.
+
+Intinya: menjadikan file sebagai program utama pelatihan model.
+
+12. main.py
+from fastapi import FastAPI, HTTPException
+
+Mengimpor framework FastAPI dan penanganan error.
+
+Intinya: digunakan untuk membuat API dan menangani kesalahan sistem.
+
+from schemas.transaction_schema import TransactionSchema
+
+Mengimpor schema validasi data transaksi.
+
+Intinya: memastikan format input sesuai sebelum diproses.
+
+from services.predict import predict_transaction
+
+Mengimpor fungsi prediksi fraud.
+
+Intinya: menghubungkan API dengan model deteksi fraud.
+
+app = FastAPI(...)
+
+Membuat aplikasi FastAPI beserta informasi API.
+
+Intinya: menginisialisasi layanan backend deteksi fraud.
+
+@app.get("/")
+
+Membuat endpoint utama API.
+
+Intinya: digunakan untuk mengecek apakah API berjalan dengan baik.
+
+def home()
+
+Mengembalikan pesan status API.
+
+Intinya: memberikan informasi bahwa sistem aktif.
+
+@app.post("/predict")
+
+Membuat endpoint prediksi fraud.
+
+Intinya: menerima data transaksi untuk dianalisis model.
+
+def predict(data: TransactionSchema)
+
+Menerima input transaksi yang telah divalidasi.
+
+Intinya: memproses data transaksi yang dikirim pengguna.
+
+predict_transaction(data.features)
+
+Menjalankan model hybrid untuk prediksi fraud.
+
+Intinya: menghasilkan skor kemungkinan terjadinya fraud.
+
+return {...}
+
+Mengembalikan hasil prediksi.
+
+Intinya: menampilkan nilai fraud score dan status transaksi.
+
+"FRAUD" if score > 0.5 else "SAFE"
+
+Menentukan kategori transaksi berdasarkan skor prediksi.
+
+Intinya: mengklasifikasikan transaksi sebagai fraud atau aman.
+
+except Exception as e
+
+Menangkap error yang terjadi saat proses prediksi.
+
+Intinya: mencegah aplikasi berhenti ketika terjadi kesalahan.
+
+HTTPException(...)
+
+Mengirim pesan error ke pengguna.
+
+Intinya: memberikan informasi jika proses prediksi gagal.
+
+13. requirements.txt
+fastapi
+
+Framework backend untuk membuat API.
+
+Intinya: digunakan untuk membangun layanan deteksi fraud berbasis web API.
+
+uvicorn
+
+Server untuk menjalankan aplikasi FastAPI.
+
+Intinya: digunakan untuk menjalankan backend API.
+
+pandas
+
+Library pengolahan data berbentuk tabel.
+
+Intinya: digunakan untuk membaca dan memanipulasi dataset transaksi.
+
+numpy
+
+Library komputasi numerik.
+
+Intinya: digunakan untuk perhitungan matematis dan pengolahan array.
+
+scikit-learn
+
+Library machine learning.
+
+Intinya: digunakan untuk preprocessing, evaluasi model, dan pembagian dataset.
+
+xgboost
+
+Library implementasi algoritma XGBoost.
+
+Intinya: digunakan sebagai model klasifikasi fraud.
+
+imbalanced-learn
+
+Library penanganan data tidak seimbang.
+
+Intinya: digunakan untuk melakukan oversampling menggunakan SMOTE.
+
+tensorflow
+
+Framework deep learning.
+
+Intinya: digunakan untuk membangun dan melatih model LSTM.
+
+joblib
+
+Library penyimpanan objek Python.
+
+Intinya: digunakan untuk menyimpan dan memuat model serta scaler.
+
+matplotlib
+
+Library visualisasi data.
+
+Intinya: digunakan untuk membuat grafik evaluasi model.
+
+seaborn
+
+Library visualisasi statistik.
+
+Intinya: digunakan untuk membuat visualisasi confusion matrix yang lebih informatif.
