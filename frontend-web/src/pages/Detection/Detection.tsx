@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
 import "./Detection.css";
 import useLanguage from "../../hooks/useLanguage";
-import { predictSingleTransaction } from "../../services/transactionApi";
+import {
+  predictSingleTransaction,
+  predictCsvFile,
+  type CsvPredictionResponse,
+} from "../../services/transactionApi";
 
 interface DetectionForm {
   amount: string;
@@ -18,6 +22,7 @@ interface DetectionResult {
 }
 
 interface CsvFile {
+  file: File;
   name: string;
   size: number;
   headers: string[];
@@ -63,12 +68,15 @@ function Detection() {
     productCode: "",
     cardType: "",
     email: "",
-    transactionTime: getCurrentDateTime()
+    transactionTime: getCurrentDateTime(),
   });
 
   const [result, setResult] = useState<DetectionResult | null>(null);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [csvResult, setCsvResult] = useState<CsvPredictionResponse | null>(
+    null,
+  );
 
   const [csvFile, setCsvFile] = useState<CsvFile | null>(null);
 
@@ -79,7 +87,7 @@ function Detection() {
   const handleChange = (field: keyof DetectionForm, value: string) => {
     setForm((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -91,6 +99,7 @@ function Detection() {
 
   const handleAnalyze = async () => {
     if (!form.amount || !form.productCode || !form.cardType || !form.email) {
+      alert("Please complete all transaction fields.");
       return;
     }
 
@@ -103,25 +112,23 @@ function Detection() {
         product_code: form.productCode,
         card_type: form.cardType,
         email: form.email,
-        transaction_time: form.transactionTime
+        transaction_time: form.transactionTime,
       });
 
-      const probability = response.fraud_score * 100;
+      const probability = Number(response.fraud_score) * 100;
 
       setResult({
         status: response.status === "FRAUD" ? "Unauthorized" : "Legitimate",
-
-        probability,
-
-        recommendation: getRecommendation(probability)
+        probability: Number(probability.toFixed(2)),
+        recommendation: getRecommendation(probability),
       });
     } catch (error) {
-      console.error("Prediction error:", error);
+      console.error("Single transaction prediction error:", error);
 
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to analyze transaction."
+          : "Failed to analyze transaction.",
       );
     } finally {
       setIsAnalyzing(false);
@@ -134,7 +141,7 @@ function Detection() {
    * =========================
    */
 
-  const parseCsv = (text: string, fileName: string, fileSize: number) => {
+  const parseCsv = (text: string, file: File) => {
     const lines = text
       .split(/\r?\n/)
       .map((line) => line.trim())
@@ -156,11 +163,12 @@ function Detection() {
       .filter((row) => row.length > 0);
 
     setCsvFile({
-      name: fileName,
-      size: fileSize,
+      file,
+      name: file.name,
+      size: file.size,
       headers,
       rows: rows.slice(0, 5),
-      totalRows: rows.length
+      totalRows: rows.length,
     });
   };
 
@@ -179,7 +187,7 @@ function Detection() {
         return;
       }
 
-      parseCsv(text, file.name, file.size);
+      parseCsv(text, file);
     };
 
     reader.readAsText(file);
@@ -259,7 +267,7 @@ function Detection() {
       ...Array.from({ length: 14 }, (_, i) => `C${i + 1}`),
       ...Array.from({ length: 15 }, (_, i) => `D${i + 1}`),
       ...Array.from({ length: 9 }, (_, i) => `M${i + 1}`),
-      ...Array.from({ length: 339 }, (_, i) => `V${i + 1}`)
+      ...Array.from({ length: 339 }, (_, i) => `V${i + 1}`),
     ];
 
     const sampleRow = headers.map((header) => {
@@ -320,7 +328,7 @@ function Detection() {
     const csvContent = [headers.join(","), sampleRow.join(",")].join("\n");
 
     const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;"
+      type: "text/csv;charset=utf-8;",
     });
 
     const url = URL.createObjectURL(blob);
@@ -345,40 +353,27 @@ function Detection() {
    * =========================
    */
 
-  const handleAnalyzeCsv = () => {
+  const handleAnalyzeCsv = async () => {
     if (!csvFile) {
       return;
     }
 
     setIsAnalyzing(true);
+    setCsvResult(null);
 
-    /*
-     * TEMPORARY MOCK
-     *
-     * Later:
-     *
-     * POST /api/detection/upload
-     *
-     * The backend will:
-     *
-     * CSV
-     * ↓
-     * Column Mapping
-     * ↓
-     * Normalization
-     * ↓
-     * AI Model
-     * ↓
-     * XGBoost + LSTM
-     */
+    try {
+      const response = await predictCsvFile(csvFile.file);
 
-    setTimeout(() => {
-      setIsAnalyzing(false);
+      setCsvResult(response);
+    } catch (error) {
+      console.error("CSV prediction error:", error);
 
       alert(
-        `CSV uploaded successfully.\n\nFile: ${csvFile.name}\nRows: ${csvFile.totalRows}`
+        error instanceof Error ? error.message : "Failed to analyze CSV file.",
       );
-    }, 700);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   /*
@@ -395,7 +390,7 @@ function Detection() {
       productCode: "",
       cardType: "",
       email: "",
-      transactionTime: getCurrentDateTime()
+      transactionTime: getCurrentDateTime(),
     });
   };
 
@@ -407,7 +402,7 @@ function Detection() {
 
     console.log("Save to history:", {
       form,
-      result
+      result,
     });
   };
 
@@ -568,7 +563,7 @@ function Detection() {
                           : "progress-fill danger"
                       }
                       style={{
-                        width: `${result.probability}%`
+                        width: `${result.probability}%`,
                       }}
                     />
                   </div>
@@ -727,6 +722,67 @@ function Detection() {
                   ? "Analyzing Transactions..."
                   : "Analyze Transactions"}
               </button>
+
+              {csvResult && (
+                <div className="csv-result-card">
+                  <h2>Analysis Result</h2>
+
+                  <div className="csv-result-summary">
+                    <div className="csv-result-item">
+                      <span>Total Transactions</span>
+                      <strong>
+                        {csvResult.total_transactions.toLocaleString()}
+                      </strong>
+                    </div>
+
+                    <div className="csv-result-item">
+                      <span>Fraud Detected</span>
+                      <strong>{csvResult.fraud_count.toLocaleString()}</strong>
+                    </div>
+
+                    <div className="csv-result-item">
+                      <span>Safe Transactions</span>
+                      <strong>{csvResult.safe_count.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  <div className="csv-preview-result">
+                    <h3>Prediction Preview</h3>
+
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Row</th>
+                          <th>Fraud Score</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {csvResult.preview.map((item) => (
+                          <tr key={item.row}>
+                            <td>{item.row}</td>
+
+                            <td>{(item.fraud_score * 100).toFixed(2)}%</td>
+
+                            <td>
+                              <span
+                                className={
+                                  item.status === "FRAUD"
+                                    ? "danger-status"
+                                    : "safe-status"
+                                }
+                              >
+                                {item.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </section>

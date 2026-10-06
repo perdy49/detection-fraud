@@ -16,18 +16,18 @@ def predict_transaction_controller(features: list[float]):
 def predict_file_controller(df):
     results = predict_transactions_batch(df)
 
-    return {
-        "total_transactions": len(results),
-        "fraud_count": sum(
-            1 for result in results
-            if result["status"] == "FRAUD"
-        ),
-        "safe_count": sum(
-            1 for result in results
-            if result["status"] == "SAFE"
-        ),
-        "results": results
-    }
+    # return {
+    #     "total_transactions": len(results),
+    #     "fraud_count": sum(
+    #         1 for result in results
+    #         if result["status"] == "FRAUD"
+    #     ),
+    #     "safe_count": sum(
+    #         1 for result in results
+    #         if result["status"] == "SAFE"
+    #     ),
+    #     "results": results
+    # }
 
 
 def predict_single_transaction_controller(

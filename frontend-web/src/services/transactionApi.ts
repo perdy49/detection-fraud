@@ -5,6 +5,46 @@ export interface PredictionResponse {
   status: "FRAUD" | "SAFE";
 }
 
+export interface CsvPreviewResult {
+  row: number;
+  fraud_score: number;
+  status: "FRAUD" | "SAFE";
+}
+
+export interface CsvPredictionResponse {
+  total_transactions: number;
+  fraud_count: number;
+  safe_count: number;
+  preview: CsvPreviewResult[];
+}
+
+export async function predictCsvFile(
+  file: File
+): Promise<CsvPredictionResponse> {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/transaction/predict-file`,
+    {
+      method: "POST",
+      body: formData
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(
+      errorData?.detail ||
+      "Failed to analyze CSV file."
+    );
+  }
+
+  return response.json();
+}
+
 export interface SingleTransactionRequest {
   amount: number;
   product_code: string;
