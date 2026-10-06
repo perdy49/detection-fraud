@@ -724,64 +724,158 @@ function Detection() {
               </button>
 
               {csvResult && (
-                <div className="csv-result-card">
-                  <h2>Analysis Result</h2>
+                <section className="csv-result-section">
+                  <div className="csv-result-header">
+                    <div>
+                      <span className="result-eyebrow">ANALYSIS COMPLETED</span>
+
+                      <h2>Analysis Result</h2>
+
+                      <p>
+                        The uploaded transaction file has been successfully
+                        analyzed.
+                      </p>
+                    </div>
+
+                    <div className="result-completed-badge">Completed</div>
+                  </div>
 
                   <div className="csv-result-summary">
-                    <div className="csv-result-item">
+                    <div className="csv-result-item total">
                       <span>Total Transactions</span>
+
                       <strong>
                         {csvResult.total_transactions.toLocaleString()}
                       </strong>
                     </div>
 
-                    <div className="csv-result-item">
+                    <div className="csv-result-item fraud">
                       <span>Fraud Detected</span>
+
                       <strong>{csvResult.fraud_count.toLocaleString()}</strong>
                     </div>
 
-                    <div className="csv-result-item">
+                    <div className="csv-result-item safe">
                       <span>Safe Transactions</span>
+
                       <strong>{csvResult.safe_count.toLocaleString()}</strong>
                     </div>
                   </div>
 
-                  <div className="csv-preview-result">
-                    <h3>Prediction Preview</h3>
+                  <div className="detection-overview">
+                    <div className="overview-header">
+                      <h3>Detection Overview</h3>
 
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Row</th>
-                          <th>Fraud Score</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
+                      <span>
+                        {(
+                          (csvResult.fraud_count /
+                            csvResult.total_transactions) *
+                          100
+                        ).toFixed(2)}
+                        % fraud rate
+                      </span>
+                    </div>
 
-                      <tbody>
-                        {csvResult.preview.map((item) => (
-                          <tr key={item.row}>
-                            <td>{item.row}</td>
+                    <div className="overview-bar">
+                      <div
+                        className="overview-fraud"
+                        style={{
+                          width: `${
+                            (csvResult.fraud_count /
+                              csvResult.total_transactions) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </div>
 
-                            <td>{(item.fraud_score * 100).toFixed(2)}%</td>
+                    <div className="overview-legend">
+                      <span>
+                        <i className="legend-dot fraud-dot" />
+                        Fraud: {csvResult.fraud_count.toLocaleString()}
+                      </span>
 
-                            <td>
-                              <span
-                                className={
-                                  item.status === "FRAUD"
-                                    ? "danger-status"
-                                    : "safe-status"
-                                }
-                              >
-                                {item.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                      <span>
+                        <i className="legend-dot safe-dot" />
+                        Safe: {csvResult.safe_count.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="csv-preview-result">
+                    <div className="prediction-header">
+                      <div>
+                        <h3>Prediction Details</h3>
+
+                        <p>
+                          Showing prediction results from the analyzed
+                          transactions.
+                        </p>
+                      </div>
+
+                      <span className="preview-count">
+                        {csvResult.preview.length} results
+                      </span>
+                    </div>
+
+                    <div className="prediction-table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Row</th>
+                            <th>Fraud Score</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {csvResult.preview.map((item) => (
+                            <tr key={item.row}>
+                              <td>{item.row}</td>
+
+                              <td>
+                                <div className="fraud-score">
+                                  <div className="score-bar">
+                                    <div
+                                      className={
+                                        item.status === "FRAUD"
+                                          ? "score-fill danger"
+                                          : "score-fill safe"
+                                      }
+                                      style={{
+                                        width: `${item.fraud_score * 100}%`,
+                                      }}
+                                    />
+                                  </div>
+
+                                  <span>
+                                    {(item.fraud_score * 100).toFixed(2)}%
+                                  </span>
+                                </div>
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    item.status === "FRAUD"
+                                      ? "csv-danger-status"
+                                      : "csv-safe-status"
+                                  }
+                                >
+                                  <span className="status-dot" />
+
+                                  {item.status === "FRAUD"
+                                    ? "FRAUD DETECTED"
+                                    : "SAFE"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
               )}
             </>
           )}

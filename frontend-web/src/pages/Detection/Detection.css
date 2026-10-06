@@ -931,6 +931,42 @@
   .csv-preview-header {
     align-items: flex-start;
   }
+
+  @media (max-width: 768px) {
+  .csv-result-section {
+    padding: 20px;
+  }
+
+  .csv-result-header {
+    flex-direction: column;
+  }
+
+  .csv-result-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .overview-legend {
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .prediction-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .prediction-table-scroll {
+    max-height: 320px;
+  }
+}
 }
 
 /* Small Mobile */
@@ -1017,4 +1053,448 @@
   .csv-preview-header > span {
     align-self: flex-start;
   }
+}
+
+  /* ==========================================
+   CSV ANALYSIS RESULT
+========================================== */
+
+.csv-result-section {
+  margin-top: 30px;
+
+  padding: 30px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  box-shadow: var(--shadow);
+}
+
+/* Result Header */
+
+.csv-result-header {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 28px;
+}
+
+.result-eyebrow {
+  display: inline-block;
+
+  margin-bottom: 7px;
+
+  color: var(--primary);
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+}
+
+.csv-result-header h2 {
+  margin: 0 0 7px;
+
+  color: var(--text);
+
+  font-size: 25px;
+}
+
+.csv-result-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  line-height: 1.6;
+}
+
+.result-completed-badge {
+  flex-shrink: 0;
+
+  padding: 8px 14px;
+
+  border-radius: 20px;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  color: var(--success);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Summary */
+
+.csv-result-summary {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 16px;
+
+  margin-bottom: 25px;
+}
+
+.csv-result-item {
+  padding: 22px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 14px;
+
+  background: var(--background);
+}
+
+.csv-result-item span {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.csv-result-item strong {
+  display: block;
+
+  color: var(--text);
+
+  font-size: 28px;
+
+  line-height: 1.1;
+}
+
+.csv-result-item.total {
+  border-top: 3px solid var(--primary);
+}
+
+.csv-result-item.fraud {
+  border-top: 3px solid #ef4444;
+}
+
+.csv-result-item.fraud strong {
+  color: #ef4444;
+}
+
+.csv-result-item.safe {
+  border-top: 3px solid var(--success);
+}
+
+.csv-result-item.safe strong {
+  color: var(--success);
+}
+
+/* Detection Overview */
+
+.detection-overview {
+  margin-bottom: 25px;
+
+  padding: 22px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 14px;
+
+  background: var(--background);
+}
+
+.overview-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 15px;
+}
+
+.overview-header h3 {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 16px;
+}
+
+.overview-header span {
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.overview-bar {
+  width: 100%;
+  height: 12px;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.overview-fraud {
+  height: 100%;
+
+  min-width: 2px;
+
+  border-radius: inherit;
+
+  background: #ef4444;
+
+  transition: width 0.5s ease;
+}
+
+.overview-legend {
+  display: flex;
+
+  gap: 25px;
+
+  margin-top: 12px;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.overview-legend span {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+}
+
+.fraud-dot {
+  background: #ef4444;
+}
+
+.safe-dot {
+  background: var(--success);
+}
+
+/* Prediction Details */
+
+.csv-preview-result {
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+
+  border-radius: 14px;
+
+  background: var(--background);
+}
+
+.prediction-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 20px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.prediction-header h3 {
+  margin: 0 0 5px;
+
+  color: var(--text);
+}
+
+.prediction-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.preview-count {
+  flex-shrink: 0;
+
+  padding: 6px 10px;
+
+  border-radius: 20px;
+
+  background: rgba(59, 130, 246, 0.1);
+
+  color: var(--primary);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Internal scroll */
+
+.prediction-table-scroll {
+  max-height: 360px;
+
+  overflow-y: auto;
+
+  overflow-x: auto;
+}
+
+.prediction-table-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.prediction-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prediction-table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+
+  background: var(--border);
+}
+
+.prediction-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.prediction-table-scroll table {
+  width: 100%;
+
+  min-width: 600px;
+
+  border-collapse: collapse;
+}
+
+.prediction-table-scroll th,
+.prediction-table-scroll td {
+  padding: 13px 18px;
+
+  border-bottom: 1px solid var(--border);
+
+  text-align: left;
+
+  font-size: 13px;
+}
+
+.prediction-table-scroll th {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 2;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-weight: 700;
+}
+
+.prediction-table-scroll td {
+  color: var(--text-secondary);
+}
+
+.prediction-table-scroll tbody tr:hover {
+  background: rgba(59, 130, 246, 0.035);
+}
+
+/* Fraud Score */
+
+.fraud-score {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 190px;
+}
+
+.score-bar {
+  width: 100px;
+  height: 7px;
+
+  overflow: hidden;
+
+  border-radius: 10px;
+
+  background: var(--border);
+}
+
+.score-fill {
+  height: 100%;
+
+  border-radius: inherit;
+}
+
+.score-fill.safe {
+  background: var(--success);
+}
+
+.score-fill.danger {
+  background: #ef4444;
+}
+
+.fraud-score > span {
+  min-width: 50px;
+
+  color: var(--text);
+
+  font-weight: 600;
+}
+
+/* Status */
+
+.csv-safe-status,
+.csv-danger-status {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 7px 11px;
+
+  border-radius: 20px;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+.csv-safe-status {
+  background: rgba(34, 197, 94, 0.12);
+
+  color: var(--success);
+}
+
+.csv-danger-status {
+  background: rgba(239, 68, 68, 0.12);
+
+  color: #ef4444;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
 }

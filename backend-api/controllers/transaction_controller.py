@@ -14,7 +14,7 @@ def predict_transaction_controller(features: list[float]):
     }
     
 def predict_file_controller(df):
-    results = predict_transactions_batch(df)
+    return predict_transactions_batch(df)
 
     # return {
     #     "total_transactions": len(results),
