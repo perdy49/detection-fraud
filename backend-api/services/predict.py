@@ -465,6 +465,12 @@ def predict_transactions_batch(df):
         raise ValueError(
             "Data transaksi kosong."
         )
+        
+        print(
+        f"[CSV] Batch prediction dimulai. "
+        f"Jumlah transaksi: {len(df)}",
+        flush=True
+    )
 
     # -----------------------------------------------------
     # SORT TEMPORAL
@@ -482,6 +488,17 @@ def predict_transactions_batch(df):
 
     X_scaled = preprocess_for_prediction(
         df.copy()
+    )
+    
+    print(
+        "[CSV] Mulai preprocessing...",
+        flush=True
+    )
+        
+    print(
+        f"[CSV] Preprocessing selesai. "
+        f"Shape: {X_scaled.shape}",
+        flush=True
     )
 
     # -----------------------------------------------------
@@ -566,11 +583,23 @@ def predict_transactions_batch(df):
     # LSTM
     # -----------------------------------------------------
 
+    print(
+        f"[CSV] Mulai LSTM. "
+        f"Sequence shape: {sequences.shape}",
+        flush=True
+    )
+
     lstm_features = (
         lstm_model.predict(
             sequences,
             verbose=0
         )
+    )
+
+    print(
+        f"[CSV] LSTM selesai. "
+        f"Output shape: {lstm_features.shape}",
+        flush=True
     )
 
     # -----------------------------------------------------
@@ -595,11 +624,22 @@ def predict_transactions_batch(df):
     # -----------------------------------------------------
     # XGBOOST
     # -----------------------------------------------------
+    
+    print(
+        f"[CSV] Mulai XGBoost. "
+        f"Hybrid shape: {hybrid_input.shape}",
+        flush=True
+    )
 
     probabilities = (
         xgb_model.predict_proba(
             hybrid_input
         )[:, 1]
+    )
+    
+    print(
+        "[CSV] XGBoost selesai.",
+        flush=True
     )
 
     # -----------------------------------------------------
