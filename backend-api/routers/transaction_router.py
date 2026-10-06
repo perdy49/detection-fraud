@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
+import io
+import pandas as pd
 
 from schemas.transaction_schema import (
     TransactionSchema,
@@ -7,7 +9,8 @@ from schemas.transaction_schema import (
 
 from controllers.transaction_controller import (
     predict_transaction_controller,
-    predict_single_transaction_controller
+    predict_single_transaction_controller,
+    predict_file_controller
 )
 
 
@@ -24,6 +27,71 @@ def predict(data: TransactionSchema):
         return predict_transaction_controller(
             data.features
         )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+        
+@router.post("/predict-file")
+async def predict_file(
+    file: UploadFile = File(...)
+):
+
+    try:
+        # -------------------------------------------------
+        # VALIDATE FILE
+        # -------------------------------------------------
+
+        if not file.filename:
+            raise HTTPException(
+                status_code=400,
+                detail="File tidak memiliki nama."
+            )
+
+        if not file.filename.lower().endswith(".csv"):
+            raise HTTPException(
+                status_code=400,
+                detail="File harus berformat CSV."
+            )
+
+        # -------------------------------------------------
+        # READ CSV
+        # -------------------------------------------------
+
+        file_content = await file.read()
+
+        if not file_content:
+            raise HTTPException(
+                status_code=400,
+                detail="File CSV kosong."
+            )
+
+        df = pd.read_csv(
+            io.BytesIO(file_content)
+        )
+
+        # -------------------------------------------------
+        # VALIDATE DATA
+        # -------------------------------------------------
+
+        if df.empty:
+            raise HTTPException(
+                status_code=400,
+                detail="CSV tidak memiliki transaksi."
+            )
+
+        # -------------------------------------------------
+        # PREDICT
+        # -------------------------------------------------
+
+        return predict_file_controller(
+            df
+        )
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(

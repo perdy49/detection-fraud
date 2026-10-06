@@ -10,6 +10,9 @@ from services.preprocess_single import (
     preprocess_single_transaction
 )
 
+from services.preprocess import (
+    preprocess_for_prediction
+)
 
 # =========================================================
 # LOAD MODELS
@@ -440,3 +443,187 @@ def predict_single_transaction(
     )
 
     return fraud_score
+
+# =========================================================
+# BATCH CSV TRANSACTION
+# =========================================================
+
+def predict_transactions_batch(df):
+    """
+    Predict multiple transactions from a CSV DataFrame.
+
+    Flow:
+    DataFrame
+        -> preprocessing
+        -> scaling
+        -> rolling sequence
+        -> LSTM
+        -> XGBoost
+    """
+
+    if df is None or df.empty:
+        raise ValueError(
+            "Data transaksi kosong."
+        )
+
+    # -----------------------------------------------------
+    # SORT TEMPORAL
+    # -----------------------------------------------------
+
+    if "TransactionDT" in df.columns:
+        df = (
+            df.sort_values("TransactionDT")
+            .reset_index(drop=True)
+        )
+
+    # -----------------------------------------------------
+    # PREPROCESS
+    # -----------------------------------------------------
+
+    X_scaled = preprocess_for_prediction(
+        df.copy()
+    )
+
+    # -----------------------------------------------------
+    # VALIDATE FEATURES
+    # -----------------------------------------------------
+
+    expected_features = (
+        scaler.n_features_in_
+    )
+
+    if X_scaled.shape[1] != expected_features:
+        raise ValueError(
+            "Jumlah fitur hasil preprocessing "
+            f"harus {expected_features}, "
+            f"tetapi mendapat {X_scaled.shape[1]}"
+        )
+
+    # -----------------------------------------------------
+    # DETERMINE SEQUENCE LENGTH
+    # -----------------------------------------------------
+
+    lstm_input_shape = (
+        lstm_model.input_shape
+    )
+
+    sequence_length = (
+        lstm_input_shape[1]
+    )
+
+    if sequence_length is None:
+        sequence_length = 20
+
+    # -----------------------------------------------------
+    # BUILD ROLLING SEQUENCES
+    # -----------------------------------------------------
+
+    sequences = []
+
+    for i in range(
+        len(X_scaled)
+    ):
+
+        start_index = max(
+            0,
+            i - sequence_length + 1
+        )
+
+        sequence = X_scaled[
+            start_index:i + 1
+        ]
+
+        # Padding awal seperti prediction
+        # single transaction yang sudah ada.
+        if len(sequence) < sequence_length:
+
+            padding = np.zeros(
+                (
+                    sequence_length
+                    - len(sequence),
+                    X_scaled.shape[1]
+                ),
+                dtype=np.float32
+            )
+
+            sequence = np.vstack(
+                (
+                    padding,
+                    sequence
+                )
+            )
+
+        sequences.append(
+            sequence
+        )
+
+    sequences = np.asarray(
+        sequences,
+        dtype=np.float32
+    )
+
+    # -----------------------------------------------------
+    # LSTM
+    # -----------------------------------------------------
+
+    lstm_features = (
+        lstm_model.predict(
+            sequences,
+            verbose=0
+        )
+    )
+
+    # -----------------------------------------------------
+    # LAST TRANSACTION FEATURES
+    # -----------------------------------------------------
+
+    xgb_input = (
+        sequences[:, -1, :]
+    )
+
+    # -----------------------------------------------------
+    # HYBRID INPUT
+    # -----------------------------------------------------
+
+    hybrid_input = np.hstack(
+        (
+            xgb_input,
+            lstm_features
+        )
+    )
+
+    # -----------------------------------------------------
+    # XGBOOST
+    # -----------------------------------------------------
+
+    probabilities = (
+        xgb_model.predict_proba(
+            hybrid_input
+        )[:, 1]
+    )
+
+    # -----------------------------------------------------
+    # BUILD RESULTS
+    # -----------------------------------------------------
+
+    results = []
+
+    for index, score in enumerate(
+        probabilities
+    ):
+
+        score = float(score)
+
+        results.append(
+            {
+                "row": index + 1,
+                "fraud_score": score,
+                "status": (
+                    "FRAUD"
+                    if score > 0.5
+                    else "SAFE"
+                )
+            }
+        )
+
+    return results

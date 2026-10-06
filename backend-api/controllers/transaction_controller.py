@@ -1,6 +1,7 @@
 from services.predict import (
     predict_transaction,
-    predict_single_transaction
+    predict_single_transaction,
+    predict_transactions_batch
 )
 
 
@@ -10,6 +11,22 @@ def predict_transaction_controller(features: list[float]):
     return {
         "fraud_score": score,
         "status": "FRAUD" if score > 0.5 else "SAFE"
+    }
+    
+def predict_file_controller(df):
+    results = predict_transactions_batch(df)
+
+    return {
+        "total_transactions": len(results),
+        "fraud_count": sum(
+            1 for result in results
+            if result["status"] == "FRAUD"
+        ),
+        "safe_count": sum(
+            1 for result in results
+            if result["status"] == "SAFE"
+        ),
+        "results": results
     }
 
 
