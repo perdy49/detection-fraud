@@ -22,6 +22,8 @@ lstm_model = load_model("model/lstm_model.keras")
 
 feature_names = joblib.load("model/feature_names.pkl")
 
+FRAUD_THRESHOLD = 0.35
+
 
 # =========================================================
 # CSV SEQUENCE BUFFER
@@ -413,7 +415,7 @@ def predict_transactions_batch(df, batch_size=512):
 
             row_number = batch_start + local_index + 1
 
-            status = "FRAUD" if score > 0.5 else "SAFE"
+            status = "FRAUD" if score >= FRAUD_THRESHOLD else "SAFE"
 
             # Hitung statistik tanpa menyimpan
             # semua hasil ke RAM

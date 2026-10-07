@@ -12,7 +12,10 @@ def create_features(df):
     # LOG AMOUNT
     # =========================
     if "TransactionAmt" in df.columns:
-        df["TransactionAmt"] = pd.to_numeric(df["TransactionAmt"], errors="coerce")
+        df["TransactionAmt"] = pd.to_numeric(
+            df["TransactionAmt"],
+            errors="coerce",
+        )
 
         df["amount_log"] = np.log1p(df["TransactionAmt"])
 
@@ -49,15 +52,18 @@ def create_features(df):
         df["addr_match"] = df["addr1"].astype(str) + "_" + df["addr2"].astype(str)
 
     # =========================
-    # TEMPORAL HOUR BUCKET
+    # TEMPORAL HOUR
     # =========================
     if "TransactionDT" in df.columns:
-        df["TransactionDT"] = pd.to_numeric(df["TransactionDT"], errors="coerce")
+        df["TransactionDT"] = pd.to_numeric(
+            df["TransactionDT"],
+            errors="coerce",
+        )
 
         df["transaction_hour"] = (df["TransactionDT"] // 3600) % 24
 
         df["is_night_transaction"] = (
-            ((df["transaction_hour"] <= 5) | (df["transaction_hour"] >= 23))
+            (df["transaction_hour"] <= 5) | (df["transaction_hour"] >= 23)
         ).astype(int)
 
     # =========================
@@ -70,8 +76,11 @@ def create_features(df):
     # =========================
     c_cols = [col for col in df.columns if col.startswith("C")]
 
-    if len(c_cols) > 0:
-        df[c_cols] = df[c_cols].apply(pd.to_numeric, errors="coerce")
+    if c_cols:
+        df[c_cols] = df[c_cols].apply(
+            pd.to_numeric,
+            errors="coerce",
+        )
 
         df["C_sum"] = df[c_cols].sum(axis=1)
 
@@ -80,8 +89,11 @@ def create_features(df):
     # =========================
     d_cols = [col for col in df.columns if col.startswith("D")]
 
-    if len(d_cols) > 0:
-        df[d_cols] = df[d_cols].apply(pd.to_numeric, errors="coerce")
+    if d_cols:
+        df[d_cols] = df[d_cols].apply(
+            pd.to_numeric,
+            errors="coerce",
+        )
 
         df["D_sum"] = df[d_cols].sum(axis=1)
 
@@ -90,23 +102,44 @@ def create_features(df):
     # =========================
     v_cols = [col for col in df.columns if col.startswith("V")]
 
-    if len(v_cols) > 0:
-        df[v_cols] = df[v_cols].apply(pd.to_numeric, errors="coerce")
+    if v_cols:
+        df[v_cols] = df[v_cols].apply(
+            pd.to_numeric,
+            errors="coerce",
+        )
 
         df["V_mean"] = df[v_cols].mean(axis=1)
 
     # =========================
     # HANDLE INF
     # =========================
-    df.replace([np.inf, -np.inf], 0, inplace=True)
+    df.replace(
+        [np.inf, -np.inf],
+        0,
+        inplace=True,
+    )
 
     # =========================
-    # FILL NAN SAFE
+    # HANDLE MISSING
     # =========================
+    #
+    # Training menggunakan df.fillna(0).
+    #
+    # Pada pandas versi baru, kolom string
+    # tidak boleh diisi dengan integer 0.
+    #
+    # Karena itu:
+    # numeric -> 0
+    # string  -> "0"
+    #
+    # Setelah preprocessing categorical,
+    # nilai tersebut akan diperlakukan sebagai
+    # representasi missing seperti pipeline lama.
+    #
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
             df[col] = df[col].fillna(0)
         else:
             df[col] = df[col].fillna("0")
-            
+
     return df
