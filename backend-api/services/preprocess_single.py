@@ -1,3 +1,5 @@
+import os
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -5,178 +7,105 @@ import pandas as pd
 from services.feature_engineering import create_features
 
 
-# =========================================================
-# LOAD MODEL PREPROCESSING
-# =========================================================
-
-scaler = joblib.load(
-    "model/scaler.pkl"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_API_DIR = os.path.dirname(CURRENT_DIR)
+MODEL_DIR = os.path.join(
+    BACKEND_API_DIR,
+    "model",
 )
 
-feature_names = joblib.load(
-    "model/feature_names.pkl"
+SCALER_PATH = os.path.join(
+    MODEL_DIR,
+    "scaler.pkl",
+)
+
+FEATURE_NAMES_PATH = os.path.join(
+    MODEL_DIR,
+    "feature_names.pkl",
+)
+
+ENCODER_PATH = os.path.join(
+    MODEL_DIR,
+    "label_encoders.pkl",
 )
 
 
-# =========================================================
-# LABEL ENCODER COMPATIBILITY
-# =========================================================
-#
-# Training menggunakan LabelEncoder().
-#
-# Karena encoder asli tidak disimpan oleh preprocess.py,
-# kita gunakan kategori IEEE-CIS yang memang digunakan
-# oleh dataset training.
-#
-# LabelEncoder mengurutkan kategori secara alfabetis.
-# =========================================================
-
-PRODUCT_CODES = [
-    "C",
-    "H",
-    "R",
-    "S",
-    "W",
-]
-
-CARD_TYPES = [
-    "american express",
-    "discover",
-    "mastercard",
-    "visa",
-]
-
-P_EMAIL_DOMAINS = [
-    "gmail.com",
-    "yahoo.com",
-    "hotmail.com",
-    "anonymous.com",
-    "aol.com",
-    "comcast.net",
-    "icloud.com",
-    "outlook.com",
-    "msn.com",
-    "att.net",
-    "live.com",
-    "sbcglobal.net",
-    "verizon.net",
-    "ymail.com",
-    "bellsouth.net",
-    "yahoo.com.mx",
-    "me.com",
-    "cox.net",
-    "optonline.net",
-    "charter.net",
-    "live.com.mx",
-    "rocketmail.com",
-    "mail.com",
-    "earthlink.net",
-    "gmail",
-    "outlook.es",
-    "mac.com",
-    "juno.com",
-    "aim.com",
-    "hotmail.es",
-    "roadrunner.com",
-    "windstream.net",
-    "hotmail.fr",
-    "frontier.com",
-    "embarqmail.com",
-    "web.de",
-    "netzero.com",
-    "twc.com",
-    "prodigy.net.mx",
-    "centurylink.net",
-    "netzero.net",
-    "frontiernet.net",
-    "q.com",
-    "suddenlink.net",
-    "cfl.rr.com",
-    "sc.rr.com",
-    "cableone.net",
-    "gmx.de",
-    "yahoo.fr",
-    "yahoo.es",
-    "hotmail.co.uk",
-    "protonmail.com",
-    "yahoo.de",
-    "ptd.net",
-    "live.fr",
-    "yahoo.co.uk",
-    "hotmail.de",
-    "servicios-ta.com",
-    "yahoo.co.jp",
-]
-
-
-def make_label_map(values):
-    """
-    Meniru perilaku LabelEncoder:
-    kategori diurutkan alfabetis kemudian diberi
-    angka 0, 1, 2, ...
-    """
-
-    values = list(values)
-
-    if "0" not in values:
-        values.append("0")
-
-    values = sorted(
-        set(str(v) for v in values)
+def _load_preprocessing():
+    scaler = joblib.load(
+        SCALER_PATH
     )
 
-    return {
-        value: index
-        for index, value in enumerate(values)
-    }
+    feature_names = joblib.load(
+        FEATURE_NAMES_PATH
+    )
+
+    if not os.path.exists(ENCODER_PATH):
+        raise FileNotFoundError(
+            "model/label_encoders.pkl tidak ditemukan. "
+            "Jalankan create_label_encoders.py terlebih dahulu."
+        )
+
+    metadata = joblib.load(
+        ENCODER_PATH
+    )
+
+    if isinstance(metadata, dict) and "encoders" in metadata:
+        encoders = metadata["encoders"]
+        defaults = metadata.get(
+            "categorical_defaults",
+            {},
+        )
+    else:
+        # Compatibility with old artifact.
+        encoders = metadata
+        defaults = {
+            col: str(encoder.classes_[0])
+            for col, encoder in encoders.items()
+        }
+
+    return (
+        scaler,
+        feature_names,
+        encoders,
+        defaults,
+    )
 
 
-PRODUCT_MAP = make_label_map(
-    PRODUCT_CODES
-)
-
-CARD_MAP = make_label_map(
-    CARD_TYPES
-)
-
-EMAIL_MAP = make_label_map(
-    P_EMAIL_DOMAINS
-)
-
-
-# =========================================================
-# HELPERS
-# =========================================================
-
-def encode_category(
+def _encode_category(
     value,
-    mapping
+    encoder,
+    default_value,
 ):
-    """
-    Encode kategori dengan mapping yang kompatibel
-    dengan konsep LabelEncoder.
-
-    Jika kategori tidak dikenal, gunakan kategori '0'
-    sebagai fallback.
-    """
-
     if value is None:
-        value = "0"
+        value = default_value
 
-    value = str(value).strip().lower()
+    value = str(value).strip()
 
     if value == "":
-        value = "0"
+        value = default_value
 
-    return mapping.get(
-        value,
-        mapping["0"]
+    if value.lower() in {
+        "nan",
+        "none",
+        "null",
+        "na",
+        "<na>",
+    }:
+        value = default_value
+
+    known = set(
+        encoder.classes_.astype(str)
     )
 
+    if value not in known:
+        raise ValueError(
+            f"Kategori {value!r} tidak ada pada data training."
+        )
 
-# =========================================================
-# SINGLE TRANSACTION PREPROCESSING
-# =========================================================
+    return float(
+        encoder.transform([value])[0]
+    )
+
 
 def preprocess_single_transaction(
     amount: float,
@@ -186,311 +115,169 @@ def preprocess_single_transaction(
     transaction_hour: int,
 ):
     """
-    Preprocessing KHUSUS SINGLE TRANSACTION.
+    Convert the small web-form input into the same 444-feature
+    numeric representation expected by the existing model.
 
-    Tidak mengubah preprocessing CSV/full transaction.
-
-    Output:
-        numpy array shape (1, 444)
+    Features not supplied by the form use the training scaler mean.
+    This keeps their scaled value near zero instead of injecting
+    arbitrary values into the model.
     """
 
-    # -----------------------------------------------------
-    # BASIC DATA
-    # -----------------------------------------------------
+    (
+        scaler,
+        feature_names,
+        encoders,
+        categorical_defaults,
+    ) = _load_preprocessing()
 
-    transaction = pd.DataFrame([
-        {
-            "TransactionDT": np.nan,
+    if amount is None or not np.isfinite(
+        float(amount)
+    ):
+        raise ValueError(
+            "Transaction amount tidak valid."
+        )
 
-            "TransactionAmt": float(
-                amount
-            ),
+    transaction_hour = int(transaction_hour)
 
-            "ProductCD": (
-                product_code
-                .strip()
-                .upper()
-            ),
+    if not 0 <= transaction_hour <= 23:
+        raise ValueError(
+            "Transaction hour harus berada pada 0-23."
+        )
 
-            "card4": (
-                card_type
-                .strip()
-                .lower()
-            ),
-
-            "P_emaildomain": (
-                email_domain
-                .strip()
-                .lower()
-            ),
-
-            # Single form tidak mempunyai
-            # recipient email.
-            "R_emaildomain": np.nan,
-        }
-    ])
-
-    # -----------------------------------------------------
-    # FEATURE ENGINEERING
-    # -----------------------------------------------------
+    transaction = pd.DataFrame(
+        [
+            {
+                "TransactionDT": np.nan,
+                "TransactionAmt": float(amount),
+                "ProductCD": (
+                    str(product_code).strip().upper()
+                    if product_code is not None
+                    else np.nan
+                ),
+                "card4": (
+                    str(card_type).strip().lower()
+                    if card_type is not None
+                    else np.nan
+                ),
+                "P_emaildomain": (
+                    str(email_domain).strip().lower()
+                    if email_domain is not None
+                    else np.nan
+                ),
+                "R_emaildomain": np.nan,
+            }
+        ]
+    )
 
     transaction = create_features(
         transaction
     )
 
-    # -----------------------------------------------------
-    # SINGLE-SPECIFIC TIME
-    # -----------------------------------------------------
-
     if "transaction_hour" in transaction.columns:
-
         transaction["transaction_hour"] = (
-            int(transaction_hour)
+            transaction_hour
         )
 
     if "is_night_transaction" in transaction.columns:
-
         transaction["is_night_transaction"] = int(
             transaction_hour <= 5
             or transaction_hour >= 23
         )
 
-    # -----------------------------------------------------
-    # CATEGORY ENCODING
-    # -----------------------------------------------------
-    #
-    # Training menggunakan LabelEncoder.
-    #
-    # predict.py sebelumnya melakukan:
-    #
-    # pd.to_numeric(... errors="coerce")
-    #
-    # sehingga "W", "visa", "gmail.com", dll
-    # berubah menjadi NaN.
-    #
-    # Itu yang kita perbaiki di sini.
-    # -----------------------------------------------------
-
-    if "ProductCD" in transaction.columns:
-
-        transaction["ProductCD"] = (
-            encode_category(
-                transaction.loc[
-                    transaction.index[0],
-                    "ProductCD"
-                ],
-                PRODUCT_MAP
-            )
-        )
-
-    if "card4" in transaction.columns:
-
-        transaction["card4"] = (
-            encode_category(
-                transaction.loc[
-                    transaction.index[0],
-                    "card4"
-                ],
-                CARD_MAP
-            )
-        )
-
-    if "P_emaildomain" in transaction.columns:
-
-        transaction["P_emaildomain"] = (
-            encode_category(
-                transaction.loc[
-                    transaction.index[0],
-                    "P_emaildomain"
-                ],
-                EMAIL_MAP
-            )
-        )
-
-    if "R_emaildomain" in transaction.columns:
-
-        # Tidak ada R_emaildomain dari form.
-        transaction["R_emaildomain"] = (
-            EMAIL_MAP["0"]
-        )
-
-    # -----------------------------------------------------
-    # EMAIL MATCH
-    # -----------------------------------------------------
-    #
-    # Karena R_emaildomain tidak diberikan,
-    # email_match = 0.
-    # -----------------------------------------------------
-
-    if "email_match" in transaction.columns:
-
-        transaction["email_match"] = 0
-
-    # -----------------------------------------------------
-    # MISSING COUNT
-    # -----------------------------------------------------
-    #
-    # Single transaction hanya memiliki sebagian
-    # informasi dari 444 feature training.
-    #
-    # Nilai missing_count dari dataframe kecil
-    # tidak comparable dengan training.
-    #
-    # Gunakan mean training sebagai neutral value.
-    # -----------------------------------------------------
-
-    if "missing_count" in feature_names:
-
-        idx = feature_names.index(
-            "missing_count"
-        )
-
-        transaction["missing_count"] = (
-            scaler.mean_[idx]
-        )
-
-    # -----------------------------------------------------
-    # REMOVE ID
-    # -----------------------------------------------------
-
     if "TransactionID" in transaction.columns:
-
         transaction = transaction.drop(
             columns=["TransactionID"]
         )
 
-    # -----------------------------------------------------
-    # ALIGN 444 FEATURES
-    # -----------------------------------------------------
+    # Do not use hand-written category lists. Use the exact encoders
+    # produced from the training dataset.
+    for col in encoders:
+        if col not in transaction.columns:
+            continue
 
+        default = categorical_defaults.get(
+            col,
+            str(encoders[col].classes_[0]),
+        )
+
+        transaction[col] = transaction[col].map(
+            lambda value: _encode_category(
+                value,
+                encoders[col],
+                default,
+            )
+        )
+
+    # Exact model schema.
     aligned = pd.DataFrame(
         index=transaction.index,
         columns=feature_names,
-        dtype=float
+        dtype=float,
     )
 
-    # -----------------------------------------------------
-    # COPY KNOWN FEATURES
-    # -----------------------------------------------------
-
     for feature in feature_names:
-
         if feature not in transaction.columns:
             continue
 
-        value = transaction.iloc[0][
-            feature
-        ]
+        value = transaction.iloc[
+            0
+        ][feature]
 
         numeric_value = pd.to_numeric(
             pd.Series([value]),
-            errors="coerce"
+            errors="coerce",
         ).iloc[0]
 
         if pd.notna(numeric_value):
-
             aligned.loc[
                 aligned.index[0],
-                feature
-            ] = float(
-                numeric_value
-            )
+                feature,
+            ] = float(numeric_value)
 
-    # -----------------------------------------------------
-    # UNKNOWN FEATURES
-    # -----------------------------------------------------
-    #
-    # Fitur lain seperti C*, D*, V*, card1, addr,
-    # identity, dll tidak tersedia pada form.
-    #
-    # Gunakan mean training supaya setelah StandardScaler
-    # nilainya menjadi sekitar 0.
-    # -----------------------------------------------------
-
-    for i, feature in enumerate(
+    # Features not available in the form are deliberately neutralized
+    # using the exact scaler training mean. After StandardScaler this
+    # becomes approximately zero.
+    for index, feature in enumerate(
         feature_names
     ):
-
         if pd.isna(
-            aligned.iloc[0, i]
+            aligned.iloc[0, index]
         ):
-
             aligned.iloc[
                 0,
-                i
-            ] = scaler.mean_[i]
-
-    # -----------------------------------------------------
-    # TRANSACTIONDT
-    # -----------------------------------------------------
-    #
-    # TransactionDT training adalah time-delta,
-    # sedangkan form memberikan datetime.
-    #
-    # Kita tidak boleh memasukkan Unix timestamp
-    # langsung ke feature ini.
-    #
-    # Gunakan mean training.
-    # -----------------------------------------------------
-
-    if "TransactionDT" in feature_names:
-
-        idx = feature_names.index(
-            "TransactionDT"
-        )
-
-        aligned.iloc[
-            0,
-            idx
-        ] = scaler.mean_[idx]
-
-    # -----------------------------------------------------
-    # CLEAN
-    # -----------------------------------------------------
+                index,
+            ] = scaler.mean_[index]
 
     aligned = aligned.replace(
         [np.inf, -np.inf],
-        np.nan
+        np.nan,
     )
 
-    # -----------------------------------------------------
-    # FINAL FALLBACK
-    # -----------------------------------------------------
-
-    for i in range(
+    for index in range(
         len(feature_names)
     ):
-
         if pd.isna(
-            aligned.iloc[0, i]
+            aligned.iloc[0, index]
         ):
-
             aligned.iloc[
                 0,
-                i
-            ] = scaler.mean_[i]
-
-    # -----------------------------------------------------
-    # SCALE
-    # -----------------------------------------------------
+                index,
+            ] = scaler.mean_[index]
 
     data_scaled = scaler.transform(
         aligned
     )
 
-    # -----------------------------------------------------
-    # VALIDATE
-    # -----------------------------------------------------
-
-    if data_scaled.shape[1] != (
-        scaler.n_features_in_
-    ):
-
+    if data_scaled.shape[1] != scaler.n_features_in_:
         raise ValueError(
-            "Jumlah fitur single transaction "
-            f"harus {scaler.n_features_in__}, "
-            f"tetapi mendapat "
-            f"{data_scaled.shape[1]}"
+            "Jumlah fitur single transaction harus "
+            f"{scaler.n_features_in__}, tetapi mendapat "
+            f"{data_scaled.shape[1]}."
+        )
+
+    if not np.isfinite(data_scaled).all():
+        raise ValueError(
+            "Single transaction menghasilkan nilai non-finite."
         )
 
     return data_scaled
