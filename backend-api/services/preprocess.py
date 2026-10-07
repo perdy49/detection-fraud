@@ -110,8 +110,8 @@ def preprocess_for_prediction(df):
     """
     Preprocess transaction data for inference.
 
-    Encoding categorical menggunakan LabelEncoder
-    yang dibuat dari dataset training asli.
+    Encoding categorical menggunakan encoder
+    yang dibuat dari dataset training.
 
     Tidak melakukan:
     - training model
@@ -126,7 +126,7 @@ def preprocess_for_prediction(df):
     df = create_features(df)
 
     # =====================================================
-    # DROP ID
+    # DROP TRANSACTION ID
     # =====================================================
 
     if "TransactionID" in df.columns:
@@ -152,7 +152,7 @@ def preprocess_for_prediction(df):
         )
 
     # =====================================================
-    # BUANG FEATURE YANG TIDAK DIPAKAI
+    # GUNAKAN HANYA FEATURE MODEL
     # =====================================================
 
     df = df[feature_names]
@@ -180,45 +180,90 @@ def preprocess_for_prediction(df):
         if col not in df.columns:
             continue
 
-        df[col] = df[col].fillna("missing").astype(str)
+        # Ambil nilai asli
+        series = df[col].copy()
 
-        # -------------------------------------------------
-        # CEK CATEGORY UNKNOWN
-        # -------------------------------------------------
+        # -----------------------------------------------
+        # NILAI MISSING
+        # -----------------------------------------------
+        #
+        # create_features() mengubah missing string
+        # menjadi "0".
+        #
+        # "0" DI SINI BUKAN kategori baru.
+        # Ini adalah representasi missing.
+        #
 
-        known_categories = set(encoder.classes_)
+        missing_mask = series.isna() | series.astype(str).eq("0")
 
-        current_categories = set(df[col].unique())
+        # -----------------------------------------------
+        # SIAPKAN HASIL NUMERIK
+        # -----------------------------------------------
 
-        unknown_categories = current_categories - known_categories
+        encoded = pd.Series(0.0, index=df.index)
 
-        if unknown_categories:
+        # -----------------------------------------------
+        # NILAI YANG BENAR-BENAR ADA
+        # -----------------------------------------------
 
-            examples = sorted(list(unknown_categories))[:10]
+        valid_mask = ~missing_mask
 
-            raise ValueError(
-                f"Kolom '{col}' memiliki kategori "
-                f"yang tidak pernah ada saat training: "
-                f"{examples}"
-            )
+        if valid_mask.any():
 
-        # -------------------------------------------------
-        # GUNAKAN MAPPING TRAINING
-        # -------------------------------------------------
+            valid_values = series.loc[valid_mask].astype(str)
 
-        df[col] = encoder.transform(df[col])
+            known_categories = set(encoder.classes_.astype(str))
+
+            unknown_categories = set(valid_values.unique()) - known_categories
+
+            # -------------------------------------------
+            # UNKNOWN CATEGORY
+            # -------------------------------------------
+
+            if unknown_categories:
+
+                examples = sorted(list(unknown_categories))[:10]
+
+                print(
+                    f"[WARNING] Kolom '{col}' "
+                    f"memiliki {len(unknown_categories)} "
+                    f"kategori yang tidak dikenal. "
+                    f"Contoh: {examples}. "
+                    f"Nilai tersebut diperlakukan "
+                    f"sebagai missing."
+                )
+
+                unknown_mask = valid_values.isin(unknown_categories)
+
+                known_mask = ~unknown_mask
+
+                known_values = valid_values.loc[known_mask]
+
+                if len(known_values) > 0:
+                    encoded.loc[known_values.index] = encoder.transform(known_values)
+
+            else:
+
+                # Semua kategori dikenal
+                encoded.loc[valid_values.index] = encoder.transform(valid_values)
+
+        # -----------------------------------------------
+        # SIMPAN HASIL ENCODING
+        # -----------------------------------------------
+
+        df[col] = encoded
 
     # =====================================================
-    # HANDLE CATEGORICAL YANG TIDAK ADA DI ENCODER
+    # CEK OBJECT / STRING YANG TERSISA
     # =====================================================
 
-    remaining_object_cols = df.select_dtypes(include=["object"]).columns
+    remaining_object_cols = df.select_dtypes(include=["object", "string"]).columns
 
     if len(remaining_object_cols) > 0:
 
         raise ValueError(
-            "Ditemukan kolom categorical yang "
-            "tidak memiliki encoder training: "
+            "Masih terdapat kolom categorical "
+            "yang belum berhasil diubah menjadi numerik: "
             f"{list(remaining_object_cols)}"
         )
 
@@ -243,6 +288,20 @@ def preprocess_for_prediction(df):
     # =====================================================
 
     scaler = joblib.load("model/scaler.pkl")
+
+    # =====================================================
+    # FINAL VALIDATION
+    # =====================================================
+
+    expected_features = scaler.n_features_in_
+
+    if df.shape[1] != expected_features:
+
+        raise ValueError(
+            "Jumlah fitur setelah preprocessing "
+            f"harus {expected_features}, "
+            f"tetapi mendapat {df.shape[1]}"
+        )
 
     # =====================================================
     # SCALE
