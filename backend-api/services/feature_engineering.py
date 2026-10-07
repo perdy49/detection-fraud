@@ -1,16 +1,24 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def create_features(df):
-    # =========================
-    # COPY DATAFRAME
-    # =========================
+    """
+    Feature engineering yang kompatibel dengan pipeline training.
+
+    Catatan:
+    - Tidak mengubah model.
+    - Tidak melakukan encoding categorical.
+    - Missing value categorical dipertahankan sebagai string "0"
+      agar kompatibel dengan perilaku pipeline training lama.
+    """
+
     df = df.copy()
 
-    # =========================
-    # LOG AMOUNT
-    # =========================
+    # =========================================================
+    # TRANSACTION AMOUNT
+    # =========================================================
+
     if "TransactionAmt" in df.columns:
         df["TransactionAmt"] = pd.to_numeric(
             df["TransactionAmt"],
@@ -19,41 +27,47 @@ def create_features(df):
 
         df["amount_log"] = np.log1p(df["TransactionAmt"])
 
-    # =========================
+    # =========================================================
     # EMAIL MATCH
-    # =========================
+    # =========================================================
+
     if "P_emaildomain" in df.columns and "R_emaildomain" in df.columns:
         df["email_match"] = (df["P_emaildomain"] == df["R_emaildomain"]).astype(int)
 
-    # =========================
+    # =========================================================
     # CARD FREQUENCY
-    # =========================
+    # =========================================================
+
     if "card1" in df.columns:
         card_freq = df["card1"].value_counts()
 
         df["card1_frequency"] = df["card1"].map(card_freq)
 
-    # =========================
-    # CARD AVG AMOUNT
-    # =========================
+    # =========================================================
+    # CARD AVERAGE AMOUNT
+    # =========================================================
+
     if "TransactionAmt" in df.columns and "card1" in df.columns:
         df["card1_amt_mean"] = df.groupby("card1")["TransactionAmt"].transform("mean")
 
-    # =========================
-    # ADDRESS AVG AMOUNT
-    # =========================
+    # =========================================================
+    # ADDRESS AVERAGE AMOUNT
+    # =========================================================
+
     if "TransactionAmt" in df.columns and "addr1" in df.columns:
         df["addr1_amt_mean"] = df.groupby("addr1")["TransactionAmt"].transform("mean")
 
-    # =========================
+    # =========================================================
     # ADDRESS MATCH
-    # =========================
+    # =========================================================
+
     if "addr1" in df.columns and "addr2" in df.columns:
         df["addr_match"] = df["addr1"].astype(str) + "_" + df["addr2"].astype(str)
 
-    # =========================
-    # TEMPORAL HOUR
-    # =========================
+    # =========================================================
+    # TRANSACTION TIME
+    # =========================================================
+
     if "TransactionDT" in df.columns:
         df["TransactionDT"] = pd.to_numeric(
             df["TransactionDT"],
@@ -66,14 +80,16 @@ def create_features(df):
             (df["transaction_hour"] <= 5) | (df["transaction_hour"] >= 23)
         ).astype(int)
 
-    # =========================
-    # MISSING VALUE COUNT
-    # =========================
-    df["missing_count"] = df.isnull().sum(axis=1)
+    # =========================================================
+    # MISSING COUNT
+    # =========================================================
 
-    # =========================
-    # C FEATURE AGGREGATION
-    # =========================
+    df["missing_count"] = df.isna().sum(axis=1)
+
+    # =========================================================
+    # C FEATURES
+    # =========================================================
+
     c_cols = [col for col in df.columns if col.startswith("C")]
 
     if c_cols:
@@ -84,9 +100,10 @@ def create_features(df):
 
         df["C_sum"] = df[c_cols].sum(axis=1)
 
-    # =========================
-    # D FEATURE AGGREGATION
-    # =========================
+    # =========================================================
+    # D FEATURES
+    # =========================================================
+
     d_cols = [col for col in df.columns if col.startswith("D")]
 
     if d_cols:
@@ -97,9 +114,10 @@ def create_features(df):
 
         df["D_sum"] = df[d_cols].sum(axis=1)
 
-    # =========================
-    # V FEATURE AGGREGATION
-    # =========================
+    # =========================================================
+    # V FEATURES
+    # =========================================================
+
     v_cols = [col for col in df.columns if col.startswith("V")]
 
     if v_cols:
@@ -110,32 +128,36 @@ def create_features(df):
 
         df["V_mean"] = df[v_cols].mean(axis=1)
 
-    # =========================
-    # HANDLE INF
-    # =========================
+    # =========================================================
+    # INFINITY
+    # =========================================================
+
     df.replace(
         [np.inf, -np.inf],
-        0,
+        np.nan,
         inplace=True,
     )
 
-    # =========================
-    # HANDLE MISSING
-    # =========================
+    # =========================================================
+    # MISSING VALUE
+    # =========================================================
     #
-    # Training menggunakan df.fillna(0).
+    # Training lama:
     #
-    # Pada pandas versi baru, kolom string
-    # tidak boleh diisi dengan integer 0.
+    #     df.fillna(0)
     #
-    # Karena itu:
+    # Pada pandas baru, integer 0 tidak boleh dipaksakan
+    # ke dtype string.
+    #
+    # Jadi hasil akhirnya dibuat:
+    #
     # numeric -> 0
-    # string  -> "0"
+    # categorical/string -> "0"
     #
-    # Setelah preprocessing categorical,
-    # nilai tersebut akan diperlakukan sebagai
-    # representasi missing seperti pipeline lama.
-    #
+    # Ini mempertahankan representasi yang digunakan
+    # pipeline training tanpa memicu error pandas.
+    # =========================================================
+
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
             df[col] = df[col].fillna(0)
