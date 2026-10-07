@@ -310,6 +310,17 @@ def preprocess_for_prediction(df):
             encoder.classes_.astype(str)
         )
 
+        # create_features() uses "0" as the training-compatible
+        # placeholder for a missing categorical value. If the original
+        # training column never contained "0" (ProductCD is the important
+        # example), treat that placeholder as missing and use the saved
+        # training default category.
+        if "0" not in known_categories:
+            series = series.replace(
+                "0",
+                default_value,
+            )
+
         unknown_mask = ~series.isin(
             known_categories
         )
