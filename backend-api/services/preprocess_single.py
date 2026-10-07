@@ -97,6 +97,12 @@ def _encode_category(
         encoder.classes_.astype(str)
     )
 
+    # create_features() represents missing categorical values as "0".
+    # If "0" was never a training category, use the saved training
+    # default instead of inventing a new category.
+    if value == "0" and "0" not in known:
+        value = default_value
+
     if value not in known:
         raise ValueError(
             f"Kategori {value!r} tidak ada pada data training."
