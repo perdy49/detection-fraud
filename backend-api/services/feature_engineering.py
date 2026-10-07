@@ -271,12 +271,30 @@ def create_features(df, reference_stats=None):
     ]
 
     if v_cols:
-        df[v_cols] = df[v_cols].apply(
-            pd.to_numeric,
-            errors="coerce",
-        )
+        # Do not calculate df[v_cols].mean(axis=1) in one operation here.
+        # IEEE-CIS contains hundreds of V columns, and selecting all of them
+        # at once can create a multi-GB temporary NumPy array on machines with
+        # limited RAM. Process one column at a time instead; the result is the
+        # same row-wise mean while using only a few MB of temporary memory.
+        v_sum = np.zeros(len(df), dtype=np.float64)
+        v_count = np.zeros(len(df), dtype=np.int32)
 
-        df["V_mean"] = df[v_cols].mean(axis=1)
+        for col in v_cols:
+            values = pd.to_numeric(
+                df[col],
+                errors="coerce",
+            ).to_numpy(dtype=np.float64, na_value=np.nan)
+
+            valid = np.isfinite(values)
+            v_sum[valid] += values[valid]
+            v_count[valid] += 1
+
+        df["V_mean"] = np.divide(
+            v_sum,
+            v_count,
+            out=np.zeros(len(df), dtype=np.float64),
+            where=v_count > 0,
+        )
 
     # =========================================================
     # INFINITY
