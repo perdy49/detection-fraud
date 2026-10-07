@@ -5,7 +5,72 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-from services.feature_engineering import create_features
+from services.feature_engineering import (
+    build_reference_stats,
+    create_features,
+)
+
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_API_DIR = os.path.dirname(CURRENT_DIR)
+MODEL_DIR = os.path.join(BACKEND_API_DIR, "model")
+
+SCALER_PATH = os.path.join(MODEL_DIR, "scaler.pkl")
+FEATURE_NAMES_PATH = os.path.join(MODEL_DIR, "feature_names.pkl")
+ENCODER_PATH = os.path.join(MODEL_DIR, "label_encoders.pkl")
+
+
+def _load_feature_names():
+    if not os.path.exists(FEATURE_NAMES_PATH):
+        raise FileNotFoundError(
+            f"Feature schema tidak ditemukan: {FEATURE_NAMES_PATH}"
+        )
+
+    return joblib.load(FEATURE_NAMES_PATH)
+
+
+def _load_preprocessing_metadata():
+    if not os.path.exists(ENCODER_PATH):
+        raise FileNotFoundError(
+            "model/label_encoders.pkl tidak ditemukan. "
+            "Jalankan backend-api/services/create_label_encoders.py "
+            "terlebih dahulu."
+        )
+
+    metadata = joblib.load(ENCODER_PATH)
+
+    # Backward compatibility dengan artifact lama yang hanya berisi
+    # {column: LabelEncoder}.
+    if isinstance(metadata, dict) and "encoders" in metadata:
+        return metadata
+
+    if isinstance(metadata, dict):
+        return {
+            "version": 1,
+            "encoders": metadata,
+            "categorical_defaults": {
+                col: (
+                    str(encoder.classes_[0])
+                    if len(encoder.classes_) > 0
+                    else "0"
+                )
+                for col, encoder in metadata.items()
+            },
+            "feature_engineering_stats": {},
+        }
+
+    raise ValueError(
+        "Format model/label_encoders.pkl tidak valid."
+    )
+
+
+def _validate_model_schema(feature_names, scaler):
+    if len(feature_names) != scaler.n_features_in_:
+        raise ValueError(
+            "Feature schema dan scaler tidak cocok: "
+            f"feature_names={len(feature_names)}, "
+            f"scaler={scaler.n_features_in_}."
+        )
 
 
 def preprocess_data(
@@ -13,15 +78,18 @@ def preprocess_data(
     identity_path=None,
     is_training=True,
 ):
-    # =========================================================
-    # LOAD TRANSACTION
-    # =========================================================
+    """
+    Training-compatible preprocessing.
+
+    IMPORTANT:
+    Existing Hybrid XGBoost + LSTM artifacts were trained with:
+        categorical missing -> "0"
+        numeric missing      -> 0
+
+    This function keeps that contract.
+    """
 
     df_transaction = pd.read_csv(transaction_path)
-
-    # =========================================================
-    # LOAD IDENTITY
-    # =========================================================
 
     if identity_path:
         df_identity = pd.read_csv(identity_path)
@@ -35,66 +103,49 @@ def preprocess_data(
     else:
         df = df_transaction.copy()
 
-    # =========================================================
-    # SORT TEMPORAL
-    # =========================================================
-
     if "TransactionDT" in df.columns:
-        df = df.sort_values("TransactionDT").reset_index(drop=True)
-
-    # =========================================================
-    # FEATURE ENGINEERING
-    # =========================================================
+        df = df.sort_values(
+            "TransactionDT"
+        ).reset_index(drop=True)
 
     df = create_features(df)
-
-    # =========================================================
-    # TARGET
-    # =========================================================
 
     y = None
 
     if "isFraud" in df.columns:
-        y = df["isFraud"]
-
+        y = df["isFraud"].astype(int)
         df = df.drop(columns=["isFraud"])
-
-    # =========================================================
-    # TRANSACTION ID
-    # =========================================================
 
     if "TransactionID" in df.columns:
         df = df.drop(columns=["TransactionID"])
 
-    # =========================================================
-    # CATEGORICAL
-    # =========================================================
-
-    categorical_cols = df.select_dtypes(include=["object", "string"]).columns
+    categorical_cols = df.select_dtypes(
+        include=["object", "string"]
+    ).columns.tolist()
 
     label_encoders = {}
 
     for col in categorical_cols:
-        df[col] = df[col].fillna("0").astype(str)
+        series = (
+            df[col]
+            .fillna("0")
+            .astype(str)
+            .str.strip()
+        )
 
         encoder = LabelEncoder()
-
-        df[col] = encoder.fit_transform(df[col])
-
+        df[col] = encoder.fit_transform(series)
         label_encoders[col] = encoder
 
-    # =========================================================
-    # NUMERICAL MISSING
-    # =========================================================
-
-    numerical_cols = df.select_dtypes(include=[np.number]).columns
+    numerical_cols = df.select_dtypes(
+        include=[np.number]
+    ).columns
 
     for col in numerical_cols:
-        df[col] = df[col].fillna(df[col].median())
-
-    # =========================================================
-    # INFINITY
-    # =========================================================
+        df[col] = pd.to_numeric(
+            df[col],
+            errors="coerce",
+        ).fillna(0)
 
     df.replace(
         [np.inf, -np.inf],
@@ -102,36 +153,48 @@ def preprocess_data(
         inplace=True,
     )
 
-    # =========================================================
-    # FINAL FEATURES
-    # =========================================================
-
-    X = df.copy()
-
-    feature_names = X.columns.tolist()
-
-    # =========================================================
-    # SCALER
-    # =========================================================
+    feature_names = df.columns.tolist()
+    X = df[feature_names].copy()
 
     scaler = StandardScaler()
 
     if is_training:
         X_scaled = scaler.fit_transform(X)
 
+        os.makedirs(MODEL_DIR, exist_ok=True)
+
         joblib.dump(
             scaler,
-            "model/scaler.pkl",
+            SCALER_PATH,
         )
 
         joblib.dump(
             feature_names,
-            "model/feature_names.pkl",
+            FEATURE_NAMES_PATH,
         )
 
+        # Save the exact encoder artifact used by this preprocessing.
+        joblib.dump(
+            {
+                "version": 2,
+                "encoders": label_encoders,
+                "categorical_defaults": {
+                    col: str(series.mode().iloc[0])
+                    if not series.mode().empty
+                    else "0"
+                    for col, series in (
+                        (
+                            col,
+                            df[col].astype(str),
+                        )
+                        for col in categorical_cols
+                    )
+                },
+            },
+            ENCODER_PATH,
+        )
     else:
-        scaler = joblib.load("model/scaler.pkl")
-
+        scaler = joblib.load(SCALER_PATH)
         X_scaled = scaler.transform(X)
 
     return (
@@ -144,168 +207,154 @@ def preprocess_data(
 
 def preprocess_for_prediction(df):
     """
-    Preprocessing CSV inference.
+    Prepare an uploaded CSV for the EXISTING trained model.
 
-    Tidak:
-    - fit scaler baru
-    - fit encoder baru
-    - retrain model
-    - mengubah model
-
-    Hanya menggunakan artefak training.
+    Rules:
+    1. Never fit an encoder.
+    2. Never fit a scaler.
+    3. Never create a new feature schema.
+    4. Missing columns are completed using training-compatible defaults.
+    5. Empty categorical cells use a training category, never an invented
+       category such as "0" when that category did not exist in training.
+    6. Truly unknown non-empty categories still raise an error.
     """
 
-    # =========================================================
-    # FEATURE ENGINEERING
-    # =========================================================
+    if df is None or df.empty:
+        raise ValueError("Data transaksi kosong.")
 
-    df = create_features(df)
+    scaler = joblib.load(SCALER_PATH)
+    feature_names = _load_feature_names()
+    metadata = _load_preprocessing_metadata()
 
-    # =========================================================
-    # DROP TRANSACTION ID
-    # =========================================================
+    _validate_model_schema(
+        feature_names,
+        scaler,
+    )
+
+    encoders = metadata["encoders"]
+    categorical_defaults = metadata.get(
+        "categorical_defaults",
+        {},
+    )
+
+    reference_stats = metadata.get(
+        "feature_engineering_stats",
+        {},
+    )
+
+    # Feature engineering must use training-derived aggregate statistics,
+    # not statistics calculated from the uploaded file.
+    df = create_features(
+        df.copy(),
+        reference_stats=reference_stats,
+    )
 
     if "TransactionID" in df.columns:
         df = df.drop(columns=["TransactionID"])
 
-    # =========================================================
-    # LOAD FEATURE NAMES
-    # =========================================================
+    # ---------------------------------------------------------
+    # COMPLETE MISSING MODEL FEATURES
+    # ---------------------------------------------------------
 
-    feature_names = joblib.load("model/feature_names.pkl")
+    for feature in feature_names:
+        if feature in df.columns:
+            continue
 
-    # =========================================================
-    # ADD MISSING FEATURES
-    # =========================================================
-    #
-    # Hanya feature yang memang diperlukan model.
-    # Tidak menambahkan feature sembarangan.
-    # =========================================================
+        if feature in encoders:
+            default_value = categorical_defaults.get(
+                feature,
+                str(encoders[feature].classes_[0]),
+            )
 
-    missing_features = [
-        feature for feature in feature_names if feature not in df.columns
-    ]
+            df[feature] = default_value
+        else:
+            # Existing model was trained with zero-imputation.
+            df[feature] = 0
 
-    for feature in missing_features:
-        df[feature] = 0
+    # Ignore columns not used by the model and align exact order.
+    df = df.reindex(columns=feature_names)
 
-    # =========================================================
-    # ALIGN FEATURE ORDER
-    # =========================================================
-
-    df = df[feature_names]
-
-    # =========================================================
-    # LOAD TRAINING ENCODERS
-    # =========================================================
-
-    encoder_path = "model/label_encoders.pkl"
-
-    if not os.path.exists(encoder_path):
-        raise FileNotFoundError(
-            "model/label_encoders.pkl "
-            "tidak ditemukan. "
-            "Jalankan create_label_encoders.py "
-            "terlebih dahulu."
-        )
-
-    label_encoders = joblib.load(encoder_path)
-
-    # =========================================================
-    # ENCODE CATEGORICAL
-    # =========================================================
+    # ---------------------------------------------------------
+    # CATEGORICAL TRANSFORMATION
+    # ---------------------------------------------------------
 
     unknown_categories = {}
 
-    for col, encoder in label_encoders.items():
+    for col, encoder in encoders.items():
         if col not in df.columns:
             continue
 
-        # Semua nilai dibuat string agar
-        # identik dengan encoder training.
-        series = df[col].fillna("0").astype(str)
+        default_value = categorical_defaults.get(
+            col,
+            str(encoder.classes_[0]),
+        )
 
-        known_categories = set(encoder.classes_.astype(str))
-
-        # -----------------------------------------------------
-        # NILAI "0" = MISSING
-        # -----------------------------------------------------
-        #
-        # Jika "0" memang tidak ada pada training encoder,
-        # jangan langsung dianggap kategori valid.
-        #
-        # Cari representasi missing yang memang dipelajari
-        # encoder.
-        # -----------------------------------------------------
-
-        if "0" not in known_categories and "missing" in known_categories:
-            series = series.replace(
-                "0",
-                "missing",
+        series = (
+            df[col]
+            .replace(
+                {
+                    "": np.nan,
+                    "nan": np.nan,
+                    "NaN": np.nan,
+                    "None": np.nan,
+                    "null": np.nan,
+                    "NULL": np.nan,
+                }
             )
+            .fillna(default_value)
+            .astype(str)
+            .str.strip()
+        )
 
-            known_categories = set(encoder.classes_.astype(str))
+        known_categories = set(
+            encoder.classes_.astype(str)
+        )
 
-        # -----------------------------------------------------
-        # DETECT UNKNOWN
-        # -----------------------------------------------------
+        unknown_mask = ~series.isin(
+            known_categories
+        )
 
-        current_categories = set(series.unique())
-
-        unknown = sorted(current_categories - known_categories)
-
-        if unknown:
-            unknown_categories[col] = unknown[:10]
+        if unknown_mask.any():
+            unknown_categories[col] = sorted(
+                series.loc[unknown_mask]
+                .dropna()
+                .unique()
+                .tolist()
+            )[:10]
 
             continue
 
-        # -----------------------------------------------------
-        # ENCODE
-        # -----------------------------------------------------
-
         df[col] = encoder.transform(series)
 
-    # =========================================================
-    # REAL UNKNOWN CATEGORY
-    # =========================================================
-
     if unknown_categories:
-        messages = []
-
-        for col, categories in unknown_categories.items():
-            messages.append(f"{col}: {categories}")
+        messages = [
+            f"{col}: {categories}"
+            for col, categories in unknown_categories.items()
+        ]
 
         raise ValueError(
-            "Ditemukan kategori yang "
-            "benar-benar tidak pernah ada "
-            "saat training:\n" + "\n".join(messages) + "\n\n"
-            "Nilai ini tidak dipaksa menjadi "
-            "kategori lain karena dapat "
-            "mengubah arti fitur model."
+            "Ditemukan kategori baru yang benar-benar tidak ada "
+            "saat training:\n"
+            + "\n".join(messages)
+            + "\n\n"
+            "Kosong/NaN sudah ditangani sebagai missing value. "
+            "Kategori baru yang berisi nilai nyata tidak boleh "
+            "dipaksa menjadi kategori lain karena akan mengubah "
+            "arti fitur model."
         )
 
-    # =========================================================
-    # CHECK REMAINING STRING
-    # =========================================================
-
-    remaining_object_cols = df.select_dtypes(include=["object", "string"]).columns
-
-    if len(remaining_object_cols) > 0:
-        raise ValueError(
-            "Masih terdapat kolom "
-            "categorical yang belum "
-            "menjadi numerik: "
-            f"{list(remaining_object_cols)}"
-        )
-
-    # =========================================================
+    # ---------------------------------------------------------
     # NUMERIC CLEANUP
-    # =========================================================
+    # ---------------------------------------------------------
 
-    numerical_cols = df.select_dtypes(include=[np.number]).columns
+    for col in feature_names:
+        if col in encoders:
+            continue
 
-    for col in numerical_cols:
-        df[col] = df[col].fillna(0)
+        df[col] = pd.to_numeric(
+            df[col],
+            errors="coerce",
+        ).fillna(0)
 
     df.replace(
         [np.inf, -np.inf],
@@ -313,31 +362,27 @@ def preprocess_for_prediction(df):
         inplace=True,
     )
 
-    # =========================================================
-    # LOAD SCALER
-    # =========================================================
+    # ---------------------------------------------------------
+    # FINAL VALIDATION
+    # ---------------------------------------------------------
 
-    scaler = joblib.load("model/scaler.pkl")
-
-    # =========================================================
-    # VALIDATE FEATURE COUNT
-    # =========================================================
-
-    expected_features = scaler.n_features_in_
-
-    if df.shape[1] != expected_features:
+    if df.shape[1] != scaler.n_features_in_:
         raise ValueError(
-            "Jumlah fitur setelah "
-            "preprocessing harus "
-            f"{expected_features}, "
-            f"tetapi mendapat "
-            f"{df.shape[1]}"
+            "Jumlah fitur setelah preprocessing harus "
+            f"{scaler.n_features_in_}, tetapi mendapat "
+            f"{df.shape[1]}."
         )
 
-    # =========================================================
-    # SCALE
-    # =========================================================
+    if df.isna().any().any():
+        raise ValueError(
+            "Masih terdapat NaN setelah preprocessing."
+        )
 
-    X_scaled = scaler.transform(df)
+    if not np.isfinite(
+        df.to_numpy(dtype=np.float64)
+    ).all():
+        raise ValueError(
+            "Masih terdapat nilai infinity setelah preprocessing."
+        )
 
-    return X_scaled
+    return scaler.transform(df)
