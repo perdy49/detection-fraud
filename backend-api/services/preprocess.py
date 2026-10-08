@@ -280,6 +280,13 @@ def preprocess_for_prediction(df):
 
     unknown_categories = {}
 
+    # Fitur kategorikal hasil feature engineering.
+    # Kombinasi baru dapat muncul secara normal pada data baru,
+    # sehingga tidak boleh dianggap sebagai kategori input mentah baru.
+    DERIVED_CATEGORICAL_FALLBACKS = {
+        "addr_match",
+    }
+
     for col, encoder in encoders.items():
         if col not in df.columns:
             continue
@@ -310,30 +317,75 @@ def preprocess_for_prediction(df):
             encoder.classes_.astype(str)
         )
 
-        # create_features() uses "0" as the training-compatible
-        # placeholder for a missing categorical value. If the original
-        # training column never contained "0" (ProductCD is the important
-        # example), treat that placeholder as missing and use the saved
-        # training default category.
-        if "0" not in known_categories:
-            series = series.replace(
+        # -----------------------------------------------------
+        # HANDLE PLACEHOLDER DARI CSV TEMPLATE / KOLOM KOSONG
+        # -----------------------------------------------------
+        #
+        # create_features() menggunakan "0" untuk missing
+        # categorical values.
+        #
+        # Pada CSV tertentu, pandas dapat membaca nilai kosong
+        # sebagai numeric sehingga berubah menjadi "0.0".
+        #
+        # Jika encoder tidak mengenal "0" atau "0.0", nilai tersebut
+        # dianggap sebagai missing dan menggunakan default training.
+        #
+
+        placeholder_mask = series.isin(
+            {
                 "0",
-                default_value,
-            )
+                "0.0",
+                "nan",
+                "NaN",
+                "None",
+                "null",
+                "NULL",
+            }
+        )
+
+        if placeholder_mask.any():
+            series.loc[placeholder_mask] = default_value
+
+        # -----------------------------------------------------
+        # HANDLE UNKNOWN CATEGORY
+        # -----------------------------------------------------
 
         unknown_mask = ~series.isin(
             known_categories
         )
 
         if unknown_mask.any():
-            unknown_categories[col] = sorted(
-                series.loc[unknown_mask]
-                .dropna()
-                .unique()
-                .tolist()
-            )[:10]
 
-            continue
+            # -------------------------------------------------
+            # FITUR TURUNAN
+            # -------------------------------------------------
+            #
+            # addr_match dibuat dari:
+            #     addr1 + "_" + addr2
+            #
+            # Kombinasi baru sangat mungkin muncul pada transaksi
+            # baru walaupun masing-masing addr1/addr2 valid.
+            #
+            # Gunakan default training category agar transaksi
+            # tetap bisa diproses.
+            #
+
+            if col in DERIVED_CATEGORICAL_FALLBACKS:
+                series.loc[unknown_mask] = default_value
+
+            else:
+                # -------------------------------------------------
+                # KATEGORI NYATA YANG BENAR-BENAR TIDAK DIKENAL
+                # -------------------------------------------------
+
+                unknown_categories[col] = sorted(
+                    series.loc[unknown_mask]
+                    .dropna()
+                    .unique()
+                    .tolist()
+                )[:10]
+
+                continue
 
         df[col] = encoder.transform(series)
 
