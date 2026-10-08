@@ -128,7 +128,7 @@ function Detection() {
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to analyze transaction.",
+          : t.detection.messages.singleError,
       );
     } finally {
       setIsAnalyzing(false);
@@ -369,7 +369,7 @@ function Detection() {
       console.error("CSV prediction error:", error);
 
       alert(
-        error instanceof Error ? error.message : "Failed to analyze CSV file.",
+        error instanceof Error ? error.message : t.detection.messages.csvError,
       );
     } finally {
       setIsAnalyzing(false);
@@ -818,7 +818,7 @@ function Detection() {
                           <tr>
                             <th>{t.detection.upload.row}</th>
                             <th>{t.detection.upload.fraudScore}</th>
-                            <th>Status</th>
+                            <th>{t.detection.result.status}</th>
                           </tr>
                         </thead>
 
