@@ -10,6 +10,7 @@ import pandas as pd
 
 from services.history_service import (
     get_transaction_history,
+    delete_transaction_history,
 )
 
 from schemas.transaction_schema import (
@@ -144,6 +145,31 @@ def get_history(
             "total": len(history),
             "data": history,
         }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+
+
+@router.delete("/history/{transaction_id}")
+def delete_history(transaction_id: str):
+    try:
+        deleted = delete_transaction_history(transaction_id)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=404, detail="Transaction history not found."
+            )
+
+        return {
+            "message": "Transaction history deleted.",
+            "id": transaction_id,
+        }
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(

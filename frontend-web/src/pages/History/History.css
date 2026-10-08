@@ -249,6 +249,25 @@
   .history-search input,
   .history-search select {
     width: 100%;
-  }
+  };
+
+  .history-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.delete-history-btn {
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.delete-history-btn:hover {
+  text-decoration: underline;
+};
 
 }

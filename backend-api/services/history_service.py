@@ -152,3 +152,16 @@ def get_transaction_history(
             ]
 
     return history
+
+
+def delete_transaction_history(transaction_id: str):
+    history = _load_history()
+
+    updated_history = [item for item in history if item.get("id") != transaction_id]
+
+    if len(updated_history) == len(history):
+        return False
+
+    _save_history(updated_history)
+
+    return True
