@@ -1492,9 +1492,11 @@
 .status-dot {
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
-
   background: currentColor;
+};
 
+.csv-history-action {
+  margin-top: 24px;
+  margin-bottom: 24px;
 }

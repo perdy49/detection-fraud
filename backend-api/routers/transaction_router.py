@@ -12,6 +12,12 @@ from services.history_service import (
     get_transaction_history,
     delete_transaction_history,
     save_transaction_history,
+    save_transaction_history_bulk,
+)
+
+from services.csv_history_service import (
+    load_csv_analysis,
+    delete_csv_analysis,
 )
 
 from schemas.transaction_schema import (
@@ -128,6 +134,38 @@ def predict_single(data: SingleTransactionSchema):
         raise HTTPException(
             status_code=500,
             detail=str(e)
+        )
+
+
+@router.post("/history/csv")
+def save_csv_history(
+    analysis_id: str,
+):
+    try:
+        records = load_csv_analysis(analysis_id)
+
+        if not records:
+            raise HTTPException(
+                status_code=400,
+                detail="Tidak ada hasil analisis CSV untuk disimpan.",
+            )
+
+        saved_records = save_transaction_history_bulk(records)
+
+        delete_csv_analysis(analysis_id)
+
+        return {
+            "message": "CSV transaction history saved successfully.",
+            "saved_count": len(saved_records),
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
         )
 
 

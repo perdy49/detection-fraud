@@ -11,6 +11,10 @@ from services.preprocess_single import (
     preprocess_single_transaction,
 )
 
+from services.csv_history_service import (
+    create_csv_analysis,
+    append_csv_analysis_records,
+)
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_API_DIR = os.path.dirname(CURRENT_DIR)
@@ -291,6 +295,41 @@ def predict_single_transaction(
     return fraud_score
 
 
+def _get_csv_history_amount(row):
+    value = row.get(
+        "TransactionAmt",
+        0,
+    )
+
+    try:
+        if pd.isna(value):
+            return 0.0
+
+        return float(value)
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0.0
+
+
+def _get_csv_history_time(row):
+    for column in (
+        "transaction_time",
+        "TransactionTime",
+        "timestamp",
+        "Timestamp",
+    ):
+        if column in row.index:
+            value = row.get(column)
+
+            if pd.notna(value):
+                return str(value)
+
+    return None
+
+
 # =========================================================
 # BATCH CSV
 # =========================================================
@@ -345,6 +384,10 @@ def predict_transactions_batch(
     fraud_count = 0
     safe_count = 0
     preview_results = []
+
+    analysis_id = create_csv_analysis()
+
+    analysis_time = pd.Timestamp.now().isoformat()
 
     total_rows = len(X_scaled)
 
@@ -432,6 +475,24 @@ def predict_transactions_batch(
                 else "SAFE"
             )
 
+            original_row_index = batch_start + local_index
+
+            original_row = df.iloc[original_row_index]
+
+            transaction_time = _get_csv_history_time(original_row)
+
+            append_csv_analysis_records(
+                analysis_id,
+                [
+                    {
+                        "amount": _get_csv_history_amount(original_row),
+                        "fraud_score": score,
+                        "status": status,
+                        "transaction_time": transaction_time,
+                    }
+                ],
+            )
+
             if status == "FRAUD":
                 fraud_count += 1
             else:
@@ -461,6 +522,7 @@ def predict_transactions_batch(
     )
 
     return {
+        "analysis_id": analysis_id,
         "total_transactions": total_rows,
         "fraud_count": fraud_count,
         "safe_count": safe_count,

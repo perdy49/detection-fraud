@@ -5,6 +5,7 @@ import {
   predictSingleTransaction,
   predictCsvFile,
   saveTransactionHistory,
+  saveCsvHistory,
   type CsvPredictionResponse,
 } from "../../services/transactionApi";
 
@@ -79,6 +80,10 @@ function Detection() {
   const [csvResult, setCsvResult] = useState<CsvPredictionResponse | null>(
     null,
   );
+
+  const [isSavingCsvHistory, setIsSavingCsvHistory] = useState(false);
+
+  const [csvHistorySaved, setCsvHistorySaved] = useState(false);
 
   const [csvFile, setCsvFile] = useState<CsvFile | null>(null);
 
@@ -237,6 +242,8 @@ function Detection() {
 
   const handleRemoveCsv = () => {
     setCsvFile(null);
+    setCsvResult(null);
+    setCsvHistorySaved(false);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -364,6 +371,7 @@ function Detection() {
 
     setIsAnalyzing(true);
     setCsvResult(null);
+    setCsvHistorySaved(false);
 
     try {
       const response = await predictCsvFile(csvFile.file);
@@ -420,6 +428,38 @@ function Detection() {
           ? error.message
           : "Gagal menyimpan transaksi ke history.",
       );
+    }
+  };
+
+  const handleSaveCsvHistory = async () => {
+    if (!csvResult) {
+      return;
+    }
+
+    if (csvHistorySaved) {
+      return;
+    }
+
+    setIsSavingCsvHistory(true);
+
+    try {
+      const response = await saveCsvHistory(csvResult.analysis_id);
+
+      setCsvHistorySaved(true);
+
+      alert(
+        `${response.saved_count.toLocaleString()} transaksi berhasil disimpan ke history.`,
+      );
+    } catch (error) {
+      console.error("Save CSV history error:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Gagal menyimpan transaksi CSV ke history.",
+      );
+    } finally {
+      setIsSavingCsvHistory(false);
     }
   };
 
@@ -536,7 +576,9 @@ function Detection() {
               onClick={handleAnalyze}
               disabled={isAnalyzing}
             >
-              {isAnalyzing ? t.detection.actions.analyzing : t.detection.form.button}
+              {isAnalyzing
+                ? t.detection.actions.analyzing
+                : t.detection.form.button}
             </button>
           </div>
 
@@ -547,9 +589,7 @@ function Detection() {
 
             {!result ? (
               <div className="empty-result">
-                <p>
-                  {t.detection.result.emptyMessage}
-                </p>
+                <p>{t.detection.result.emptyMessage}</p>
               </div>
             ) : (
               <>
@@ -619,9 +659,7 @@ function Detection() {
           <div className="upload-header">
             <h2>{t.detection.upload.title}</h2>
 
-            <p>
-              {t.detection.upload.description}
-            </p>
+            <p>{t.detection.upload.description}</p>
           </div>
 
           {/* DOWNLOAD SAMPLE */}
@@ -630,9 +668,7 @@ function Detection() {
             <div>
               <h3>{t.detection.upload.templateTitle}</h3>
 
-              <p>
-                {t.detection.upload.templateDescription}
-              </p>
+              <p>{t.detection.upload.templateDescription}</p>
             </div>
 
             <button className="secondary-btn" onClick={handleDownloadSample}>
@@ -693,7 +729,11 @@ function Detection() {
                   <div>
                     <h3>{t.detection.upload.previewTitle}</h3>
 
-                    <p>{t.detection.upload.previewDescription(csvFile.rows.length)}</p>
+                    <p>
+                      {t.detection.upload.previewDescription(
+                        csvFile.rows.length,
+                      )}
+                    </p>
                   </div>
 
                   <span>{csvFile.headers.length} columns</span>
@@ -740,22 +780,37 @@ function Detection() {
                 <section className="csv-result-section">
                   <div className="csv-result-header">
                     <div>
-                      <span className="result-eyebrow">{t.detection.upload.completedEyebrow}</span>
+                      <span className="result-eyebrow">
+                        {t.detection.upload.completedEyebrow}
+                      </span>
 
                       <h2>{t.detection.upload.analysisResult}</h2>
 
-                      <p>
-                        {t.detection.upload.completedDescription}
-                      </p>
+                      <p>{t.detection.upload.completedDescription}</p>
                     </div>
 
-                    <div className="result-completed-badge">{t.detection.upload.completed}</div>
+                    <div className="result-completed-badge">
+                      {t.detection.upload.completed}
+                    </div>
                   </div>
 
                   <div className="csv-result-summary">
                     <div className="csv-result-item total">
                       <span>{t.detection.upload.totalTransactions}</span>
-
+                      <div className="csv-history-action">
+                        <button
+                          type="button"
+                          className="primary-btn"
+                          onClick={handleSaveCsvHistory}
+                          disabled={isSavingCsvHistory || csvHistorySaved}
+                        >
+                          {isSavingCsvHistory
+                            ? "Saving..."
+                            : csvHistorySaved
+                              ? "Saved to History"
+                              : "Save All to History"}
+                        </button>
+                      </div>
                       <strong>
                         {csvResult.total_transactions.toLocaleString()}
                       </strong>
@@ -804,12 +859,14 @@ function Detection() {
                     <div className="overview-legend">
                       <span>
                         <i className="legend-dot fraud-dot" />
-                        {t.detection.upload.fraud}: {csvResult.fraud_count.toLocaleString()}
+                        {t.detection.upload.fraud}:{" "}
+                        {csvResult.fraud_count.toLocaleString()}
                       </span>
 
                       <span>
                         <i className="legend-dot safe-dot" />
-                        {t.detection.upload.safe}: {csvResult.safe_count.toLocaleString()}
+                        {t.detection.upload.safe}:{" "}
+                        {csvResult.safe_count.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -819,9 +876,7 @@ function Detection() {
                       <div>
                         <h3>{t.detection.upload.predictionDetails}</h3>
 
-                        <p>
-                          {t.detection.upload.predictionDescription}
-                        </p>
+                        <p>{t.detection.upload.predictionDescription}</p>
                       </div>
 
                       <span className="preview-count">

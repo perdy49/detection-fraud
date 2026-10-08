@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from uuid import uuid4
 from typing import Optional
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -113,6 +114,47 @@ def save_transaction_history(
     _save_history(history)
 
     return record
+
+
+def save_transaction_history_bulk(
+    records: list[dict],
+):
+    if not records:
+        raise ValueError("Tidak ada transaksi untuk disimpan.")
+
+    history = _load_history()
+
+    created_at = datetime.now().isoformat()
+
+    new_records = []
+
+    for record in records:
+        transaction_id = (
+            f"TRX-{datetime.now().strftime('%Y%m%d%H%M%S%f')}" f"-{uuid4().hex[:8]}"
+        )
+
+        history_record = {
+            "id": transaction_id,
+            "amount": float(record.get("amount", 0)),
+            "fraud_score": float(record.get("fraud_score", 0)),
+            "status": record.get(
+                "status",
+                "SAFE",
+            ),
+            "transaction_time": record.get(
+                "transaction_time",
+                created_at,
+            ),
+            "created_at": created_at,
+        }
+
+        new_records.append(history_record)
+
+    history = new_records + history
+
+    _save_history(history)
+
+    return new_records
 
 
 def get_transaction_history(

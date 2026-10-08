@@ -12,6 +12,7 @@ export interface CsvPreviewResult {
 }
 
 export interface CsvPredictionResponse {
+  analysis_id: string;
   total_transactions: number;
   fraud_count: number;
   safe_count: number;
@@ -131,6 +132,34 @@ export async function saveTransactionHistory(
     const errorData = await response.json().catch(() => null);
 
     throw new Error(errorData?.detail || "Failed to save transaction history.");
+  }
+
+  return response.json();
+}
+
+export interface SaveCsvHistoryResponse {
+  message: string;
+  saved_count: number;
+}
+
+export async function saveCsvHistory(
+  analysisId: string,
+): Promise<SaveCsvHistoryResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/transaction/history/csv?analysis_id=${encodeURIComponent(
+      analysisId,
+    )}`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(
+      errorData?.detail || "Failed to save CSV transaction history.",
+    );
   }
 
   return response.json();
