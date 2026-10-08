@@ -125,7 +125,7 @@ function Detection() {
         probability: Number(probability.toFixed(2)),
         recommendation: getRecommendation(probability, t),
       });
-      alert("Transaction analyzed and saved to history successfully.");
+
     } catch (error) {
       console.error("Single transaction prediction error:", error);
 
