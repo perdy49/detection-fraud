@@ -285,5 +285,54 @@
 .delete-history-btn:hover {
   background: var(--danger);
   color: white;
+}
 
+/* ==========================================
+   History Pagination
+========================================== */
+
+.history-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 10px 0;
+}
+
+.history-page-btn {
+  min-width: 40px;
+  height: 40px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.history-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.history-page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.history-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

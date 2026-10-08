@@ -26,6 +26,9 @@ function History() {
   const [status, setStatus] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 4;
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -104,6 +107,13 @@ function History() {
     });
   };
 
+  const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const currentHistory = history.slice(startIndex, endIndex);
+
   const handleDelete = async (transactionId: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this transaction?",
@@ -150,6 +160,7 @@ function History() {
           type="text"
           value={search}
           onChange={(event) => {
+            setCurrentPage(1);
             setSearch(event.target.value);
           }}
           placeholder={t.history.search}
@@ -158,6 +169,7 @@ function History() {
         <select
           value={status}
           onChange={(event) => {
+            setCurrentPage(1);
             setStatus(event.target.value);
           }}
         >
@@ -194,7 +206,7 @@ function History() {
 
         {!loading &&
           !error &&
-          history.map((item) => (
+          currentHistory.map((item) => (
             <div className="history-card" key={item.id}>
               <div className="history-top">
                 <h3>#{item.id}</h3>
@@ -237,6 +249,51 @@ function History() {
               </div>
             </div>
           ))}
+
+        {!loading && !error && history.length > 0 && totalPages > 1 && (
+          <div className="history-pagination">
+            <button
+              type="button"
+              className="history-page-btn"
+              onClick={() => {
+                setCurrentPage((page) => Math.max(page - 1, 1));
+              }}
+              disabled={currentPage === 1}
+            >
+              ‹
+            </button>
+
+            {Array.from({ length: totalPages }, (_, index) => {
+              const pageNumber = index + 1;
+
+              return (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  className={`history-page-btn ${
+                    currentPage === pageNumber ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    setCurrentPage(pageNumber);
+                  }}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              className="history-page-btn"
+              onClick={() => {
+                setCurrentPage((page) => Math.min(page + 1, totalPages));
+              }}
+              disabled={currentPage === totalPages}
+            >
+              ›
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
