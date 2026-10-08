@@ -129,7 +129,7 @@ export const translations = {
         high: "This transaction shows a high risk of unauthorized activity. Please verify the transaction before proceeding.",
         critical: "This transaction is highly suspicious. Additional verification is strongly recommended before proceeding."
       },
-      messages: { completeFields: "Please complete all transaction fields.", csvOnly: "Please upload a CSV file." },
+      messages: { completeFields: "Please complete all transaction fields.", csvOnly: "Please upload a CSV file.", singleError: "Failed to analyze transaction.", csvError: "Failed to analyze CSV file." },
       actions: { analyzing: "Analyzing...", analyzingTransactions: "Analyzing Transactions...", analyzeTransactions: "Analyze Transactions" },
       upload: {
         title: "Upload Transaction File", description: "Upload a CSV file containing transaction data for multiple transaction detection.",
@@ -362,7 +362,7 @@ export const translations = {
         high: "Transaksi ini menunjukkan risiko tinggi aktivitas tidak sah. Silakan verifikasi transaksi sebelum melanjutkan.",
         critical: "Transaksi ini sangat mencurigakan. Sangat disarankan melakukan verifikasi tambahan sebelum melanjutkan."
       },
-      messages: { completeFields: "Harap lengkapi semua data transaksi.", csvOnly: "Silakan unggah file CSV." },
+      messages: { completeFields: "Harap lengkapi semua data transaksi.", csvOnly: "Silakan unggah file CSV.", singleError: "Gagal menganalisis transaksi.", csvError: "Gagal menganalisis file CSV." },
       actions: { analyzing: "Menganalisis...", analyzingTransactions: "Menganalisis Transaksi...", analyzeTransactions: "Analisis Transaksi" },
       upload: {
         title: "Unggah File Transaksi", description: "Unggah file CSV yang berisi data transaksi untuk mendeteksi beberapa transaksi.",
