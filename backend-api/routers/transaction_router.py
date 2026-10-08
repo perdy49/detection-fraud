@@ -1,6 +1,16 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    UploadFile,
+    File,
+    Query,
+)
 import io
 import pandas as pd
+
+from services.history_service import (
+    get_transaction_history,
+)
 
 from schemas.transaction_schema import (
     TransactionSchema,
@@ -33,7 +43,7 @@ def predict(data: TransactionSchema):
             status_code=500,
             detail=str(e)
         )
-        
+
 @router.post("/predict-file")
 async def predict_file(
     file: UploadFile = File(...)
@@ -116,4 +126,27 @@ def predict_single(data: SingleTransactionSchema):
         raise HTTPException(
             status_code=500,
             detail=str(e)
+        )
+
+
+@router.get("/history")
+def get_history(
+    search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+):
+    try:
+        history = get_transaction_history(
+            search=search,
+            status=status,
+        )
+
+        return {
+            "total": len(history),
+            "data": history,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
         )

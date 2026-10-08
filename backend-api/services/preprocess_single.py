@@ -76,10 +76,23 @@ def _encode_category(
     encoder,
     default_value,
 ):
+    """
+    Encode categorical value for SINGLE TRANSACTION only.
+
+    Empty values and numeric placeholders produced by the small
+    single-transaction form are treated as missing values.
+
+    Real unknown categories are still rejected.
+    """
+
     if value is None:
         value = default_value
 
     value = str(value).strip()
+
+    # ---------------------------------------------------------
+    # MISSING VALUE
+    # ---------------------------------------------------------
 
     if value == "":
         value = default_value
@@ -93,24 +106,42 @@ def _encode_category(
     }:
         value = default_value
 
-    known = set(
-        encoder.classes_.astype(str)
-    )
+    # ---------------------------------------------------------
+    # PLACEHOLDER DARI SINGLE TRANSACTION
+    # ---------------------------------------------------------
+    #
+    # Karena single transaction hanya menyediakan sebagian kecil
+    # fitur, beberapa nilai kosong dapat direpresentasikan sebagai
+    # "0" atau "0.0".
+    #
+    # Ini bukan kategori baru. Ini adalah missing value.
+    #
 
-    # create_features() represents missing categorical values as "0".
-    # If "0" was never a training category, use the saved training
-    # default instead of inventing a new category.
-    if value == "0" and "0" not in known:
+    if value in {
+        "0",
+        "0.0",
+    }:
+        known = set(encoder.classes_.astype(str))
+
+        # Jika "0"/"0.0" memang merupakan kategori training,
+        # pertahankan nilai tersebut.
+        if value in known:
+            return float(encoder.transform([value])[0])
+
+        # Jika tidak pernah ada saat training, gunakan default
+        # kategori training.
         value = default_value
 
-    if value not in known:
-        raise ValueError(
-            f"Kategori {value!r} tidak ada pada data training."
-        )
+    # ---------------------------------------------------------
+    # VALIDATE AGAINST TRAINING CATEGORIES
+    # ---------------------------------------------------------
 
-    return float(
-        encoder.transform([value])[0]
-    )
+    known = set(encoder.classes_.astype(str))
+
+    if value not in known:
+        raise ValueError(f"Kategori {value!r} tidak ada pada data training.")
+
+    return float(encoder.transform([value])[0])
 
 
 def preprocess_single_transaction(

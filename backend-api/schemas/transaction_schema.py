@@ -15,3 +15,17 @@ class SingleTransactionSchema(BaseModel):
     card_type: str
     email: str
     transaction_time: str
+
+
+class HistoryItemSchema(BaseModel):
+    id: str
+    amount: float
+    fraud_score: float
+    status: str
+    transaction_time: str
+    created_at: str
+
+
+class HistoryResponseSchema(BaseModel):
+    total: int
+    data: List[HistoryItemSchema]

@@ -1,8 +1,10 @@
 import "./Home.css";
 import useLanguage from "../../hooks/useLanguage";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
   const t = useLanguage();
+  const navigate = useNavigate();
 
   return (
     <div className="home">
@@ -19,9 +21,19 @@ function Home() {
           <p>{t.home.description}</p>
 
           <div className="hero-buttons">
-            <button className="primary-btn">{t.home.start}</button>
+            <button
+              className="primary-btn"
+              onClick={() => navigate("/detection")}
+            >
+              {t.home.start}
+            </button>
 
-            <button className="secondary-btn">{t.home.learn}</button>
+            <button
+              className="secondary-btn"
+              onClick={() => navigate("/education")}
+            >
+              {t.home.learn}
+            </button>
           </div>
         </div>
       </section>
@@ -110,7 +122,12 @@ function Home() {
 
         <p>{t.home.cta.description}</p>
 
-        <button className="primary-btn">{t.home.cta.button}</button>
+        <button
+          className="primary-btn"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          {t.home.cta.button}
+        </button>
       </section>
     </div>
   );
