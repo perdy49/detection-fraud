@@ -58,22 +58,22 @@ function Education() {
         <h2>{t.education.workflow.title}</h2>
 
         <div className="workflow-ai">
-          <div className="step">Transaction</div>
+          <div className="step">{t.education.workflow.transaction}</div>
           <span>→</span>
 
-          <div className="step">Preprocessing</div>
+          <div className="step">{t.education.workflow.preprocessing}</div>
           <span>→</span>
 
-          <div className="step">Feature Engineering</div>
+          <div className="step">{t.education.workflow.featureEngineering}</div>
           <span>→</span>
 
-          <div className="step">XGBoost</div>
+          <div className="step">{t.education.workflow.xgboost}</div>
           <span>+</span>
 
-          <div className="step">LSTM</div>
+          <div className="step">{t.education.workflow.lstm}</div>
           <span>→</span>
 
-          <div className="step">Prediction</div>
+          <div className="step">{t.education.workflow.prediction}</div>
         </div>
       </section>
 
