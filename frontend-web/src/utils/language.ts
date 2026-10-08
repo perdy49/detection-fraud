@@ -119,8 +119,28 @@ export const translations = {
           "Clear Results",
 
         SaveToHistory:
-          "Save To History"
-      }
+          "Save To History",
+        emptyMessage: "Enter transaction information and click Analyze Transaction to see the detection result."
+      },
+      modes: { single: "Single Transaction", upload: "Upload Transaction File" },
+      recommendations: {
+        low: "This transaction appears legitimate. No significant unauthorized activity was detected.",
+        medium: "This transaction shows some suspicious characteristics. Additional verification is recommended.",
+        high: "This transaction shows a high risk of unauthorized activity. Please verify the transaction before proceeding.",
+        critical: "This transaction is highly suspicious. Additional verification is strongly recommended before proceeding."
+      },
+      messages: { completeFields: "Please complete all transaction fields.", csvOnly: "Please upload a CSV file." },
+      actions: { analyzing: "Analyzing...", analyzingTransactions: "Analyzing Transactions...", analyzeTransactions: "Analyze Transactions" },
+      upload: {
+        title: "Upload Transaction File", description: "Upload a CSV file containing transaction data for multiple transaction detection.",
+        templateTitle: "CSV Template", templateDescription: "Not sure about the required CSV structure? Download our sample template first.", downloadSample: "Download CSV Sample",
+        dropTitle: "Drop your CSV file here", dropDescription: "or click to browse from your computer", supportedFormat: "Supported format: CSV", remove: "Remove",
+        previewTitle: "CSV Preview", previewDescription: (count: number) => "Showing the first " + count + " rows",
+        completedEyebrow: "ANALYSIS COMPLETED", analysisResult: "Analysis Result", completedDescription: "The uploaded transaction file has been successfully analyzed.", completed: "Completed",
+        totalTransactions: "Total Transactions", fraudDetected: "Fraud Detected", safeTransactions: "Safe Transactions", detectionOverview: "Detection Overview", fraudRate: "% fraud rate", fraud: "Fraud", safe: "Safe",
+        predictionDetails: "Prediction Details", predictionDescription: "Showing prediction results from the analyzed transactions.", row: "Row", fraudScore: "Fraud Score"
+      },
+      status: { fraud: "FRAUD DETECTED", safe: "SAFE" }
     },
 
     history: {
@@ -332,8 +352,28 @@ export const translations = {
           "Hapus Hasil",
 
         SaveToHistory:
-          "Simpan ke Riwayat"
-      }
+          "Simpan ke Riwayat",
+        emptyMessage: "Masukkan informasi transaksi lalu klik Analisis Transaksi untuk melihat hasil deteksi."
+      },
+      modes: { single: "Transaksi Tunggal", upload: "Unggah File Transaksi" },
+      recommendations: {
+        low: "Transaksi ini terindikasi sah. Tidak ditemukan aktivitas tidak sah yang signifikan.",
+        medium: "Transaksi ini menunjukkan beberapa karakteristik mencurigakan. Disarankan melakukan verifikasi tambahan.",
+        high: "Transaksi ini menunjukkan risiko tinggi aktivitas tidak sah. Silakan verifikasi transaksi sebelum melanjutkan.",
+        critical: "Transaksi ini sangat mencurigakan. Sangat disarankan melakukan verifikasi tambahan sebelum melanjutkan."
+      },
+      messages: { completeFields: "Harap lengkapi semua data transaksi.", csvOnly: "Silakan unggah file CSV." },
+      actions: { analyzing: "Menganalisis...", analyzingTransactions: "Menganalisis Transaksi...", analyzeTransactions: "Analisis Transaksi" },
+      upload: {
+        title: "Unggah File Transaksi", description: "Unggah file CSV yang berisi data transaksi untuk mendeteksi beberapa transaksi.",
+        templateTitle: "Template CSV", templateDescription: "Tidak yakin dengan struktur CSV yang diperlukan? Unduh template contoh terlebih dahulu.", downloadSample: "Unduh Contoh CSV",
+        dropTitle: "Letakkan file CSV di sini", dropDescription: "atau klik untuk memilih dari komputer", supportedFormat: "Format yang didukung: CSV", remove: "Hapus",
+        previewTitle: "Pratinjau CSV", previewDescription: (count: number) => "Menampilkan " + count + " baris pertama",
+        completedEyebrow: "ANALISIS SELESAI", analysisResult: "Hasil Analisis", completedDescription: "File transaksi yang diunggah telah berhasil dianalisis.", completed: "Selesai",
+        totalTransactions: "Total Transaksi", fraudDetected: "Fraud Terdeteksi", safeTransactions: "Transaksi Aman", detectionOverview: "Ringkasan Deteksi", fraudRate: "% tingkat fraud", fraud: "Fraud", safe: "Aman",
+        predictionDetails: "Detail Prediksi", predictionDescription: "Menampilkan hasil prediksi dari transaksi yang telah dianalisis.", row: "Baris", fraudScore: "Skor Fraud"
+      },
+      status: { fraud: "FRAUD TERDETEKSI", safe: "AMAN" }
     },
 
     history: {
