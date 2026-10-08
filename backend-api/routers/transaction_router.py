@@ -11,6 +11,7 @@ import pandas as pd
 from services.history_service import (
     get_transaction_history,
     delete_transaction_history,
+    save_transaction_history,
 )
 
 from schemas.transaction_schema import (
@@ -127,6 +128,33 @@ def predict_single(data: SingleTransactionSchema):
         raise HTTPException(
             status_code=500,
             detail=str(e)
+        )
+
+
+@router.post("/history")
+def save_history(
+    amount: float,
+    fraud_score: float,
+    status: str,
+    transaction_time: str,
+):
+    try:
+        history_record = save_transaction_history(
+            amount=amount,
+            fraud_score=fraud_score,
+            status=status,
+            transaction_time=transaction_time,
+        )
+
+        return {
+            "message": "Transaction history saved successfully.",
+            "data": history_record,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
         )
 
 

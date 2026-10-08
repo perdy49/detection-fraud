@@ -19,27 +19,21 @@ export interface CsvPredictionResponse {
 }
 
 export async function predictCsvFile(
-  file: File
+  file: File,
 ): Promise<CsvPredictionResponse> {
   const formData = new FormData();
 
   formData.append("file", file);
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/transaction/predict-file`,
-    {
-      method: "POST",
-      body: formData
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/transaction/predict-file`, {
+    method: "POST",
+    body: formData,
+  });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
 
-    throw new Error(
-      errorData?.detail ||
-      "Failed to analyze CSV file."
-    );
+    throw new Error(errorData?.detail || "Failed to analyze CSV file.");
   }
 
   return response.json();
@@ -54,17 +48,17 @@ export interface SingleTransactionRequest {
 }
 
 export async function predictSingleTransaction(
-  data: SingleTransactionRequest
+  data: SingleTransactionRequest,
 ): Promise<PredictionResponse> {
   const response = await fetch(
     `${API_BASE_URL}/api/transaction/predict-single`,
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
-    }
+      body: JSON.stringify(data),
+    },
   );
 
   if (!response.ok) {
@@ -77,22 +71,66 @@ export async function predictSingleTransaction(
 }
 
 export async function predictTransaction(
-  features: number[]
+  features: number[],
 ): Promise<PredictionResponse> {
   const response = await fetch(`${API_BASE_URL}/api/transaction/predict`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      features
-    })
+      features,
+    }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
 
     throw new Error(errorData?.detail || "Failed to predict transaction.");
+  }
+
+  return response.json();
+}
+
+export interface SaveHistoryRequest {
+  amount: number;
+  fraud_score: number;
+  status: "FRAUD" | "SAFE";
+  transaction_time: string;
+}
+
+export interface SaveHistoryResponse {
+  message: string;
+  data: {
+    id: string;
+    amount: number;
+    fraud_score: number;
+    status: "FRAUD" | "SAFE";
+    transaction_time: string;
+    created_at: string;
+  };
+}
+
+export async function saveTransactionHistory(
+  data: SaveHistoryRequest,
+): Promise<SaveHistoryResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/transaction/history?amount=${encodeURIComponent(
+      data.amount,
+    )}&fraud_score=${encodeURIComponent(
+      data.fraud_score,
+    )}&status=${encodeURIComponent(
+      data.status,
+    )}&transaction_time=${encodeURIComponent(data.transaction_time)}`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+
+    throw new Error(errorData?.detail || "Failed to save transaction history.");
   }
 
   return response.json();

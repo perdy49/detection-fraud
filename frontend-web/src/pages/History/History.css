@@ -221,10 +221,11 @@
 }
 
 
-/* Small Mobile */
+/* ==========================================
+   Small Mobile
+========================================== */
 
 @media (max-width: 480px) {
-
   .history {
     padding: 40px 6%;
   }
@@ -249,25 +250,40 @@
   .history-search input,
   .history-search select {
     width: 100%;
-  };
+  }
+}
 
-  .history-card-title {
+
+/* ==========================================
+   History Card Actions
+========================================== */
+
+.history-card-actions {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .delete-history-btn {
-  border: none;
+  padding: 7px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+
   background: transparent;
-  color: #ef4444;
-  cursor: pointer;
-  font-size: 14px;
+  color: var(--danger);
+
+  font-size: 13px;
   font-weight: 600;
+
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .delete-history-btn:hover {
-  text-decoration: underline;
-};
+  background: var(--danger);
+  color: white;
 
 }

@@ -197,17 +197,7 @@ function History() {
           history.map((item) => (
             <div className="history-card" key={item.id}>
               <div className="history-top">
-                <div className="history-card-title">
-                  <h3>#{item.id}</h3>
-
-                  <button
-                    type="button"
-                    className="delete-history-btn"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    Hapus
-                  </button>
-                </div>
+                <h3>#{item.id}</h3>
 
                 <span className={item.status === "SAFE" ? "safe" : "fraud"}>
                   {item.status === "SAFE"
@@ -234,6 +224,16 @@ function History() {
 
                   <p>{formatDate(item.transaction_time)}</p>
                 </div>
+              </div>
+
+              <div className="history-card-actions">
+                <button
+                  type="button"
+                  className="delete-history-btn"
+                  onClick={() => handleDelete(item.id)}
+                >
+                  Hapus
+                </button>
               </div>
             </div>
           ))}

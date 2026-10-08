@@ -4,6 +4,7 @@ import useLanguage from "../../hooks/useLanguage";
 import {
   predictSingleTransaction,
   predictCsvFile,
+  saveTransactionHistory,
   type CsvPredictionResponse,
 } from "../../services/transactionApi";
 
@@ -17,6 +18,7 @@ interface DetectionForm {
 
 interface DetectionResult {
   status: "Legitimate" | "Unauthorized";
+  backendStatus: "SAFE" | "FRAUD";
   probability: number;
   recommendation: string;
 }
@@ -119,9 +121,11 @@ function Detection() {
 
       setResult({
         status: response.status === "FRAUD" ? "Unauthorized" : "Legitimate",
+        backendStatus: response.status,
         probability: Number(probability.toFixed(2)),
         recommendation: getRecommendation(probability, t),
       });
+      alert("Transaction analyzed and saved to history successfully.");
     } catch (error) {
       console.error("Single transaction prediction error:", error);
 
@@ -394,16 +398,29 @@ function Detection() {
     });
   };
 
-  const handleSaveHistory = () => {
-    /*
-     * TODO:
-     * Connect this to backend history API.
-     */
+  const handleSaveHistory = async () => {
+    if (!result) {
+      return;
+    }
 
-    console.log("Save to history:", {
-      form,
-      result,
-    });
+    try {
+      await saveTransactionHistory({
+        amount: Number(form.amount),
+        fraud_score: result.probability / 100,
+        status: result.backendStatus,
+        transaction_time: form.transactionTime,
+      });
+
+      alert("Berhasil disimpan ke history.");
+    } catch (error) {
+      console.error("Save history error:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Gagal menyimpan transaksi ke history.",
+      );
+    }
   };
 
   return (

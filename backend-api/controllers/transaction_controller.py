@@ -4,9 +4,9 @@ from services.predict import (
     predict_transactions_batch,
 )
 
-from services.history_service import (
-    save_transaction_history,
-)
+# from services.history_service import (
+#     save_transaction_history,
+# )
 
 FRAUD_THRESHOLD = 0.35
 
@@ -43,15 +43,7 @@ def predict_single_transaction_controller(
 
     status = "FRAUD" if score >= FRAUD_THRESHOLD else "SAFE"
 
-    history_record = save_transaction_history(
-        amount=amount,
-        fraud_score=score,
-        status=status,
-        transaction_time=transaction_time,
-    )
-
     return {
         "fraud_score": score,
         "status": status,
-        "history_id": history_record["id"],
     }
