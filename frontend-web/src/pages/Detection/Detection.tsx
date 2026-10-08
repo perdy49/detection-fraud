@@ -42,20 +42,20 @@ function getCurrentDateTime() {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function getRecommendation(probability: number) {
+function getRecommendation(probability: number, t: ReturnType<typeof useLanguage>) {
   if (probability < 30) {
-    return "This transaction appears legitimate. No significant unauthorized activity was detected.";
+    return t.detection.recommendations.low;
   }
 
   if (probability < 60) {
-    return "This transaction shows some suspicious characteristics. Additional verification is recommended.";
+    return t.detection.recommendations.medium;
   }
 
   if (probability < 80) {
-    return "This transaction shows a high risk of unauthorized activity. Please verify the transaction before proceeding.";
+    return t.detection.recommendations.high;
   }
 
-  return "This transaction is highly suspicious. Additional verification is strongly recommended before proceeding.";
+  return t.detection.recommendations.critical;
 }
 
 function Detection() {
@@ -99,7 +99,7 @@ function Detection() {
 
   const handleAnalyze = async () => {
     if (!form.amount || !form.productCode || !form.cardType || !form.email) {
-      alert("Please complete all transaction fields.");
+      alert(t.detection.messages.completeFields);
       return;
     }
 
@@ -120,7 +120,7 @@ function Detection() {
       setResult({
         status: response.status === "FRAUD" ? "Unauthorized" : "Legitimate",
         probability: Number(probability.toFixed(2)),
-        recommendation: getRecommendation(probability),
+        recommendation: getRecommendation(probability, t),
       });
     } catch (error) {
       console.error("Single transaction prediction error:", error);
@@ -174,7 +174,7 @@ function Detection() {
 
   const handleFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      alert("Please upload a CSV file.");
+      alert(t.detection.messages.csvOnly);
       return;
     }
 
@@ -423,14 +423,14 @@ function Detection() {
           className={`mode-btn ${mode === "single" ? "active" : ""}`}
           onClick={() => setMode("single")}
         >
-          Single Transaction
+          {t.detection.modes.single}
         </button>
 
         <button
           className={`mode-btn ${mode === "upload" ? "active" : ""}`}
           onClick={() => setMode("upload")}
         >
-          Upload Transaction File
+          {t.detection.modes.upload}
         </button>
       </section>
 
@@ -519,7 +519,7 @@ function Detection() {
               onClick={handleAnalyze}
               disabled={isAnalyzing}
             >
-              {isAnalyzing ? "Analyzing..." : t.detection.form.button}
+              {isAnalyzing ? t.detection.actions.analyzing : t.detection.form.button}
             </button>
           </div>
 
@@ -531,9 +531,7 @@ function Detection() {
             {!result ? (
               <div className="empty-result">
                 <p>
-                  Enter transaction information and click
-                  <strong> Analyze Transaction </strong>
-                  to see the detection result.
+                  {t.detection.result.emptyMessage}
                 </p>
               </div>
             ) : (
@@ -602,11 +600,10 @@ function Detection() {
       {mode === "upload" && (
         <section className="upload-container">
           <div className="upload-header">
-            <h2>Upload Transaction File</h2>
+            <h2>{t.detection.upload.title}</h2>
 
             <p>
-              Upload a CSV file containing transaction data for multiple
-              transaction detection.
+              {t.detection.upload.description}
             </p>
           </div>
 
@@ -614,16 +611,15 @@ function Detection() {
 
           <div className="csv-template-card">
             <div>
-              <h3>CSV Template</h3>
+              <h3>{t.detection.upload.templateTitle}</h3>
 
               <p>
-                Not sure about the required CSV structure? Download our sample
-                template first.
+                {t.detection.upload.templateDescription}
               </p>
             </div>
 
             <button className="secondary-btn" onClick={handleDownloadSample}>
-              Download CSV Sample
+              {t.detection.upload.downloadSample}
             </button>
           </div>
 
@@ -647,11 +643,11 @@ function Detection() {
 
               <div className="upload-icon">↑</div>
 
-              <h3>Drop your CSV file here</h3>
+              <h3>{t.detection.upload.dropTitle}</h3>
 
-              <p>or click to browse from your computer</p>
+              <p>{t.detection.upload.dropDescription}</p>
 
-              <span>Supported format: CSV</span>
+              <span>{t.detection.upload.supportedFormat}</span>
             </div>
           ) : (
             <>
@@ -678,9 +674,9 @@ function Detection() {
               <div className="csv-preview">
                 <div className="csv-preview-header">
                   <div>
-                    <h3>CSV Preview</h3>
+                    <h3>{t.detection.upload.previewTitle}</h3>
 
-                    <p>Showing the first {csvFile.rows.length} rows</p>
+                    <p>{t.detection.upload.previewDescription(csvFile.rows.length)}</p>
                   </div>
 
                   <span>{csvFile.headers.length} columns</span>
@@ -719,30 +715,29 @@ function Detection() {
                 disabled={isAnalyzing}
               >
                 {isAnalyzing
-                  ? "Analyzing Transactions..."
-                  : "Analyze Transactions"}
+                  ? t.detection.actions.analyzingTransactions
+                  : t.detection.actions.analyzeTransactions}
               </button>
 
               {csvResult && (
                 <section className="csv-result-section">
                   <div className="csv-result-header">
                     <div>
-                      <span className="result-eyebrow">ANALYSIS COMPLETED</span>
+                      <span className="result-eyebrow">{t.detection.upload.completedEyebrow}</span>
 
-                      <h2>Analysis Result</h2>
+                      <h2>{t.detection.upload.analysisResult}</h2>
 
                       <p>
-                        The uploaded transaction file has been successfully
-                        analyzed.
+                        {t.detection.upload.completedDescription}
                       </p>
                     </div>
 
-                    <div className="result-completed-badge">Completed</div>
+                    <div className="result-completed-badge">{t.detection.upload.completed}</div>
                   </div>
 
                   <div className="csv-result-summary">
                     <div className="csv-result-item total">
-                      <span>Total Transactions</span>
+                      <span>{t.detection.upload.totalTransactions}</span>
 
                       <strong>
                         {csvResult.total_transactions.toLocaleString()}
@@ -750,13 +745,13 @@ function Detection() {
                     </div>
 
                     <div className="csv-result-item fraud">
-                      <span>Fraud Detected</span>
+                      <span>{t.detection.upload.fraudDetected}</span>
 
                       <strong>{csvResult.fraud_count.toLocaleString()}</strong>
                     </div>
 
                     <div className="csv-result-item safe">
-                      <span>Safe Transactions</span>
+                      <span>{t.detection.upload.safeTransactions}</span>
 
                       <strong>{csvResult.safe_count.toLocaleString()}</strong>
                     </div>
@@ -764,7 +759,7 @@ function Detection() {
 
                   <div className="detection-overview">
                     <div className="overview-header">
-                      <h3>Detection Overview</h3>
+                      <h3>{t.detection.upload.detectionOverview}</h3>
 
                       <span>
                         {(
@@ -772,7 +767,7 @@ function Detection() {
                             csvResult.total_transactions) *
                           100
                         ).toFixed(2)}
-                        % fraud rate
+                        {t.detection.upload.fraudRate}
                       </span>
                     </div>
 
@@ -792,12 +787,12 @@ function Detection() {
                     <div className="overview-legend">
                       <span>
                         <i className="legend-dot fraud-dot" />
-                        Fraud: {csvResult.fraud_count.toLocaleString()}
+                        {t.detection.upload.fraud}: {csvResult.fraud_count.toLocaleString()}
                       </span>
 
                       <span>
                         <i className="legend-dot safe-dot" />
-                        Safe: {csvResult.safe_count.toLocaleString()}
+                        {t.detection.upload.safe}: {csvResult.safe_count.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -805,11 +800,10 @@ function Detection() {
                   <div className="csv-preview-result">
                     <div className="prediction-header">
                       <div>
-                        <h3>Prediction Details</h3>
+                        <h3>{t.detection.upload.predictionDetails}</h3>
 
                         <p>
-                          Showing prediction results from the analyzed
-                          transactions.
+                          {t.detection.upload.predictionDescription}
                         </p>
                       </div>
 
@@ -822,8 +816,8 @@ function Detection() {
                       <table>
                         <thead>
                           <tr>
-                            <th>Row</th>
-                            <th>Fraud Score</th>
+                            <th>{t.detection.upload.row}</th>
+                            <th>{t.detection.upload.fraudScore}</th>
                             <th>Status</th>
                           </tr>
                         </thead>
@@ -865,8 +859,8 @@ function Detection() {
                                   <span className="status-dot" />
 
                                   {item.status === "FRAUD"
-                                    ? "FRAUD DETECTED"
-                                    : "SAFE"}
+                                    ? t.detection.status.fraud
+                                    : t.detection.status.safe}
                                 </span>
                               </td>
                             </tr>
