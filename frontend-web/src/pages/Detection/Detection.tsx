@@ -797,20 +797,7 @@ function Detection() {
                   <div className="csv-result-summary">
                     <div className="csv-result-item total">
                       <span>{t.detection.upload.totalTransactions}</span>
-                      <div className="csv-history-action">
-                        <button
-                          type="button"
-                          className="primary-btn"
-                          onClick={handleSaveCsvHistory}
-                          disabled={isSavingCsvHistory || csvHistorySaved}
-                        >
-                          {isSavingCsvHistory
-                            ? "Saving..."
-                            : csvHistorySaved
-                              ? "Saved to History"
-                              : "Save All to History"}
-                        </button>
-                      </div>
+
                       <strong>
                         {csvResult.total_transactions.toLocaleString()}
                       </strong>
@@ -827,6 +814,21 @@ function Detection() {
 
                       <strong>{csvResult.safe_count.toLocaleString()}</strong>
                     </div>
+                  </div>
+
+                  <div className="csv-history-action">
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={handleSaveCsvHistory}
+                      disabled={isSavingCsvHistory || csvHistorySaved}
+                    >
+                      {isSavingCsvHistory
+                        ? "Saving..."
+                        : csvHistorySaved
+                          ? "Saved to History"
+                          : "Save All to History"}
+                    </button>
                   </div>
 
                   <div className="detection-overview">

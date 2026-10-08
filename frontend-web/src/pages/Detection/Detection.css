@@ -1494,9 +1494,17 @@
   height: 7px;
   border-radius: 50%;
   background: currentColor;
-};
+}
+
+/* ==========================================
+   CSV History Action
+========================================== */
 
 .csv-history-action {
-  margin-top: 24px;
-  margin-bottom: 24px;
+  margin-top: 25px;
+  margin-bottom: 30px;
+}
+
+.csv-history-action .save-result-btn {
+  width: 100%;
 }

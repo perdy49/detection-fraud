@@ -1,5 +1,13 @@
 [
   {
+    "id": "TRX-20261008213510826413-809cf9ac",
+    "amount": 125.5,
+    "fraud_score": 0.0034977796021848917,
+    "status": "SAFE",
+    "transaction_time": null,
+    "created_at": "2026-10-08T21:35:10.826413"
+  },
+  {
     "id": "TRX-20261008212818912291-8bc580b0",
     "amount": 125.5,
     "fraud_score": 0.0034977796021848917,
@@ -22,13 +30,5 @@
     "status": "FRAUD",
     "transaction_time": "2026-10-08T16:37",
     "created_at": "2026-10-08T16:37:31.730923"
-  },
-  {
-    "id": "TRX-20261008110042-0002",
-    "amount": 1.0,
-    "fraud_score": 0.4581727683544159,
-    "status": "FRAUD",
-    "transaction_time": "2026-10-08T11:00",
-    "created_at": "2026-10-08T11:00:42.710909"
   }
 ]
