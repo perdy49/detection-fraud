@@ -200,7 +200,13 @@ export const translations = {
       },
 
       workflow: {
-        title: "How Our AI Works"
+        title: "How Our AI Works",
+        transaction: "Transaction",
+        preprocessing: "Preprocessing",
+        featureEngineering: "Feature Engineering",
+        xgboost: "XGBoost",
+        lstm: "LSTM",
+        prediction: "Prediction"
       },
 
       advantages: {
@@ -435,7 +441,13 @@ export const translations = {
       },
 
       workflow: {
-        title: "Cara Kerja AI Kami"
+        title: "Cara Kerja AI Kami",
+        transaction: "Transaksi",
+        preprocessing: "Pra-pemrosesan",
+        featureEngineering: "Rekayasa Fitur",
+        xgboost: "XGBoost",
+        lstm: "LSTM",
+        prediction: "Prediksi"
       },
 
       advantages: {
